@@ -1,0 +1,9 @@
+# # CreateCouponCodeRequest
+
+## Properties
+
+Name | Type | Description | Notes
+------------ | ------------- | ------------- | -------------
+**coupon_code** | **string** | Unique case sensitive code. Contains letters and numbers. | [optional] [default to 'WINTER2021']
+
+[[Back to Model list]](../../README.md#models) [[Back to API list]](../../README.md#endpoints) [[Back to README]](../../README.md)

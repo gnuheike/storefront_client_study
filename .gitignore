@@ -1,0 +1,4 @@
+.env
+vendor
+openapi-generator-cli.jar
+.idea
