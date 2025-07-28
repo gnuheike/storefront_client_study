@@ -38,6 +38,7 @@ final readonly class ClientBehaviorConsoleRunner
         }
 
         $this->addItemsToCart($items);
+        $this->createOrder($items);
 
         return Command::SUCCESS;
     }
@@ -92,11 +93,6 @@ final readonly class ClientBehaviorConsoleRunner
         return $items;
     }
 
-    /**
-     * Add a free item and not free to the cart
-     * @param Items $items
-     * @return void
-     */
     private function addItemsToCart(Items $items): void
     {
         $this->logger->info('Getting user cart...');
@@ -159,6 +155,11 @@ final readonly class ClientBehaviorConsoleRunner
         } catch (Exception $e) {
             $this->logger->error('Error in addItemsToCart: ' . $e->getMessage());
         }
+    }
+
+    private function createOrder(): void
+    {
+
     }
 
 }
