@@ -38,7 +38,7 @@ final readonly class ClientBehaviorConsoleRunner
         }
 
         $this->addItemsToCart($items);
-        $this->createOrder($items);
+        $this->createOrder();
 
         return Command::SUCCESS;
     }
@@ -119,12 +119,10 @@ final readonly class ClientBehaviorConsoleRunner
             }
 
             // Add free item to cart
-            $freeItem = $items->getFreeItems()[0];
-            $nonFreeItem = $items->getPaidItems()[0];
-            $itemsToAdd = [
-                $freeItem->sku, $freeItem->sku,
-                $nonFreeItem->sku, $nonFreeItem->sku, $nonFreeItem->sku
-            ];
+            $itemsToAdd = array_map(
+                fn($item) => $item->sku,
+                $items->items
+            );
 
             $this->logger->info('Adding items to cart... ');
             $response = $this->clientCartApplicationService->fillCartWithItems($currentCart->id, $itemsToAdd);
@@ -159,7 +157,58 @@ final readonly class ClientBehaviorConsoleRunner
 
     private function createOrder(): void
     {
+        $this->logger->info('Creating sandbox order...');
 
+        try {
+            $carts = $this->clientCartApplicationService->listCarts();
+            if (count($carts->carts) === 0) {
+                $this->logger->error('No carts found for the current user');
+                return;
+            }
+
+            // Use the first cart (current)
+            $currentCart = $carts->carts[0];
+            $this->logger->info('Using cart ID: ' . $currentCart->id);
+
+            // Create a sandbox order
+            $order = $this->clientCartApplicationService->createOrder($currentCart->id, true);
+
+            // Display order information
+            $this->logger->info('Order created successfully:');
+            $this->logger->info(sprintf('- Order ID: %s', $order->id));
+            $this->logger->info(sprintf('- Status: %s', $order->status));
+            $this->logger->info(sprintf('- Currency: %s', $order->currency));
+            $this->logger->info(sprintf('- Sandbox: %s', $order->isSandbox ? 'Yes' : 'No'));
+            $this->logger->info(sprintf('- Items count: %d', count($order->items)));
+
+            // Display items in the order
+            $this->logger->info('Order items:');
+            foreach ($order->items as $item) {
+                $this->logger->info(sprintf(
+                    '- %s (SKU: %s, Price: %s %s, Quantity: %d, Free: %s)',
+                    $item->name,
+                    $item->sku->value,
+                    $item->price->amount,
+                    $item->price->currency,
+                    $item->quantity,
+                    $item->isFree ? 'Yes' : 'No'
+                ));
+            }
+
+            // Create a payment token for the order
+            $this->logger->info('Creating payment token for the order...');
+            $paymentToken = $this->clientCartApplicationService->createPaymentToken($order->id);
+
+            // Display payment token information
+            $this->logger->info('Payment token created successfully:');
+            $this->logger->info(sprintf('- Token: %s', $paymentToken->token));
+            $this->logger->info(sprintf('- Order ID: %s', $paymentToken->orderId));
+
+            $url = 'https://sandbox-secure.xsolla.com/paystation4/payment/credit-card?token=' . $paymentToken->token;
+            $this->logger->info(sprintf('- Payment URL: %s', $url));
+        } catch (Exception $e) {
+            $this->logger->error('Error in createOrder: ' . $e->getMessage());
+        }
     }
 
 }

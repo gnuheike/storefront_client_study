@@ -9,6 +9,8 @@ use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use StoreFrontClient\Application\Handler\Command\CreateCurrencyHandler;
 use StoreFrontClient\Application\Handler\Command\CreateItemHandler;
+use StoreFrontClient\Application\Handler\Command\CreateOrderHandler;
+use StoreFrontClient\Application\Handler\Command\CreatePaymentTokenHandler;
 use StoreFrontClient\Application\Handler\Command\FillCartWithItemsHandler;
 use StoreFrontClient\Application\Handler\Query\GetCartsHandler;
 use StoreFrontClient\Application\Handler\Query\GetCurrenciesHandler;
@@ -22,6 +24,7 @@ use StoreFrontClient\Application\Service\Client\SimpleClientCartApplicationServi
 use StoreFrontClient\Domain\Repository\CartRepositoryInterface;
 use StoreFrontClient\Domain\Repository\CurrencyRepositoryInterface;
 use StoreFrontClient\Domain\Repository\ItemRepositoryInterface;
+use StoreFrontClient\Domain\Repository\OrderRepositoryInterface;
 use StoreFrontClient\Infrastructure\Adapter\OpenAPI\Mapper\CartMapper;
 use StoreFrontClient\Infrastructure\Adapter\OpenAPI\Mapper\CurrencyMapper;
 use StoreFrontClient\Infrastructure\Adapter\OpenAPI\Mapper\ItemMapper;
@@ -29,6 +32,7 @@ use StoreFrontClient\Infrastructure\Adapter\OpenAPI\Mapper\SkuMapper;
 use StoreFrontClient\Infrastructure\Adapter\OpenAPI\Repository\CartConfiguredRepository;
 use StoreFrontClient\Infrastructure\Adapter\OpenAPI\Repository\CurrencyConfiguredRepository;
 use StoreFrontClient\Infrastructure\Adapter\OpenAPI\Repository\ItemConfiguredRepository;
+use StoreFrontClient\Infrastructure\Adapter\OpenAPI\Repository\OrderConfiguredRepository;
 use StoreFrontClient\Infrastructure\Logging\ConsoleLogger;
 use StoreFrontClient\Presentation\AdminBehaviorConsoleRunner;
 use StoreFrontClient\Presentation\ClientBehaviorConsoleRunner;
@@ -65,6 +69,10 @@ return static function (): ContainerInterface {
             $container,
             $clientConfig
         ),
+        OrderRepositoryInterface::class => static fn(ContainerInterface $container) => orderRepositoryFactory(
+            $container,
+            $clientConfig
+        ),
         Client::class => function () {
             return new Client();
         },
@@ -97,6 +105,12 @@ return static function (): ContainerInterface {
         ),
         FillCartWithItemsHandler::class => static fn(ContainerInterface $container) => new FillCartWithItemsHandler(
             $container->get(CartRepositoryInterface::class)
+        ),
+        CreateOrderHandler::class => static fn(ContainerInterface $container) => new CreateOrderHandler(
+            $container->get(OrderRepositoryInterface::class)
+        ),
+        CreatePaymentTokenHandler::class => static fn(ContainerInterface $container) => new CreatePaymentTokenHandler(
+            $container->get(OrderRepositoryInterface::class)
         ),
 
         // Presentation
@@ -165,6 +179,24 @@ function cartRepositoryFactory(
     return new CartConfiguredRepository(
         $clientConfig,
         $container->get(Client::class),
+        $container->get(CartMapper::class)
+    );
+}
+
+function orderRepositoryFactory(
+    ContainerInterface $container,
+    Configuration      $clientConfig
+): OrderRepositoryInterface
+{
+    $adminConfig = (new Configuration())
+        ->setUsername($_ENV['STOREFRONT_PROJECT_ID'])
+        ->setPassword($_ENV['STOREFRONT_ADMIN_TOKEN']);
+        
+    return new OrderConfiguredRepository(
+        $clientConfig,
+        $adminConfig,
+        $container->get(Client::class),
+        $container->get(CartRepositoryInterface::class),
         $container->get(CartMapper::class)
     );
 }

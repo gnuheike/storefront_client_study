@@ -40,11 +40,11 @@ readonly class CurrencyMapper
         $limitsArray = json_decode(json_encode($currency->getLimits()), true);
         $periodsArray = json_decode(json_encode($currency->getPeriods()), true);
         $customAttributesArray = json_decode(json_encode($currency->getCustomAttributes()), true);
-        
+
         return new Currency(
             new Sku($currency->getSku()),
             LocalizedText::fromArray($nameArray),
-            LocalizedText::fromArray($descriptionArray),
+            $descriptionArray ? LocalizedText::fromArray($descriptionArray) : null,
             $currency->getIsEnabled(),
             $currency->getIsFree(),
             $currency->getOrder(),
@@ -52,7 +52,7 @@ readonly class CurrencyMapper
             $attributesArray,
             $limitsArray,
             $periodsArray,
-            $customAttributesArray
+            $customAttributesArray ?? []
         );
     }
 
