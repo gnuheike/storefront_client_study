@@ -7,16 +7,18 @@ use GuzzleHttp\Client;
 use OpenAPI\Client\Configuration;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
-use StoreFrontClient\Application\Handler\Command\AddItemToCartHandler;
 use StoreFrontClient\Application\Handler\Command\CreateCurrencyHandler;
 use StoreFrontClient\Application\Handler\Command\CreateItemHandler;
+use StoreFrontClient\Application\Handler\Command\FillCartWithItemsHandler;
 use StoreFrontClient\Application\Handler\Query\GetCartsHandler;
 use StoreFrontClient\Application\Handler\Query\GetCurrenciesHandler;
 use StoreFrontClient\Application\Handler\Query\GetItemsHandler;
 use StoreFrontClient\Application\Service\Admin\AdminApplicationService;
 use StoreFrontClient\Application\Service\Admin\SimpleAdminApplicationService;
 use StoreFrontClient\Application\Service\Client\ClientApplicationService;
+use StoreFrontClient\Application\Service\Client\ClientCartApplicationService;
 use StoreFrontClient\Application\Service\Client\SimpleClientApplicationService;
+use StoreFrontClient\Application\Service\Client\SimpleClientCartApplicationService;
 use StoreFrontClient\Domain\Repository\CartRepositoryInterface;
 use StoreFrontClient\Domain\Repository\CurrencyRepositoryInterface;
 use StoreFrontClient\Domain\Repository\ItemRepositoryInterface;
@@ -72,6 +74,9 @@ return static function (): ContainerInterface {
         ClientApplicationService::class => static fn(ContainerInterface $container) => $container->get(
             SimpleClientApplicationService::class
         ),
+        ClientCartApplicationService::class => static fn(ContainerInterface $container) => $container->get(
+            SimpleClientCartApplicationService::class
+        ),
         LoggerInterface::class => static fn() => new ConsoleLogger(),
 
         //Handlers
@@ -90,7 +95,7 @@ return static function (): ContainerInterface {
         GetCartsHandler::class => static fn(ContainerInterface $container) => new GetCartsHandler(
             $container->get(CartRepositoryInterface::class)
         ),
-        AddItemToCartHandler::class => static fn(ContainerInterface $container) => new AddItemToCartHandler(
+        FillCartWithItemsHandler::class => static fn(ContainerInterface $container) => new FillCartWithItemsHandler(
             $container->get(CartRepositoryInterface::class)
         ),
 
@@ -107,10 +112,8 @@ return static function (): ContainerInterface {
         ),
         ClientBehaviorConsoleRunner::class => static fn(ContainerInterface $container) => new ClientBehaviorConsoleRunner(
             $container->get(ClientApplicationService::class),
-            $container->get(LoggerInterface::class),
-            $container->get(InputInterface::class),
-            $container->get(OutputInterface::class),
-            $container->get(QuestionHelper::class),
+            $container->get(ClientCartApplicationService::class),
+            $container->get(LoggerInterface::class)
         ),
 
         InputInterface::class => static fn() => new ArgvInput(),

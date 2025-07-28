@@ -1,20 +1,21 @@
 # Storefront Client
 
-A PHP command-line application for interacting with a storefront system. This client provides both admin and user functionalities for managing and interacting with virtual items and currencies.
+A PHP command-line application for interacting with a storefront system. This client provides both admin and user
+functionalities for managing and interacting with virtual items and currencies.
 
 ## Project Overview
 
 The Storefront Client is a CLI tool that allows:
 
 - **Admin Operations**:
-  - Creating and managing virtual currencies
-  - Creating and managing virtual items
+    - Creating and managing virtual currencies
+    - Creating and managing virtual items
 
 - **Client Operations**:
-  - Viewing available currencies
-  - Browsing available items
-  - Adding items to a cart
-  - Viewing cart contents
+    - Viewing available currencies
+    - Browsing available items
+    - Adding items to a cart
+    - Viewing cart contents
 
 The application communicates with a backend service using an OpenAPI client.
 
@@ -22,7 +23,7 @@ The application communicates with a backend service using an OpenAPI client.
 
 ### Prerequisites
 
-- PHP 8.1 or higher
+- PHP 8.3 or higher
 - Composer
 
 ### Setup
@@ -62,7 +63,8 @@ php index.php
 
 ### Running the Admin Application
 
-To run the admin application (create currencies and items), uncomment the admin runner in `index.php` and comment out the client runner:
+To run the admin application (create currencies and items), uncomment the admin runner in `index.php` and comment out
+the client runner:
 
 ```php
 // Modify index.php
@@ -83,6 +85,7 @@ The project follows a clean architecture approach with four distinct layers:
 ### 1. Domain Layer (`src/Domain/`)
 
 Contains core business logic, entities, value objects, and repository interfaces:
+
 - Models: `Item`, `Currency`, `Cart`
 - Value Objects: `Sku`
 - Repository Interfaces: `ItemRepositoryInterface`, `CurrencyRepositoryInterface`, `CartRepositoryInterface`
@@ -90,6 +93,7 @@ Contains core business logic, entities, value objects, and repository interfaces
 ### 2. Application Layer (`src/Application/`)
 
 Contains use cases, commands, and services that orchestrate domain objects:
+
 - Command Handlers: `CreateCurrencyHandler`, `CreateItemHandler`, `AddItemToCartHandler`
 - Query Handlers: `GetCurrenciesHandler`, `GetItemsHandler`, `GetCartsHandler`
 - Services: `AdminApplicationService`, `ClientApplicationService`
@@ -97,6 +101,7 @@ Contains use cases, commands, and services that orchestrate domain objects:
 ### 3. Infrastructure Layer (`src/Infrastructure/`)
 
 Contains implementations of interfaces defined in the Domain layer:
+
 - Repository Implementations: `ItemConfiguredRepository`, `CurrencyConfiguredRepository`, `CartConfiguredRepository`
 - Adapters: OpenAPI client integration
 - Mappers: `ItemMapper`, `CurrencyMapper`, `CartMapper`
@@ -105,6 +110,7 @@ Contains implementations of interfaces defined in the Domain layer:
 ### 4. Presentation Layer (`src/Presentation/`)
 
 Contains entry points to the application:
+
 - Console Runners: `AdminBehaviorConsoleRunner`, `ClientBehaviorConsoleRunner`
 - Providers: `AdminCurrencyProvider`, `AdminItemProvider`
 

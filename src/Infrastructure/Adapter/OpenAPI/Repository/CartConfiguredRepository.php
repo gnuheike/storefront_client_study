@@ -70,23 +70,36 @@ readonly class CartConfiguredRepository implements CartRepositoryInterface
     }
 
     /**
-     * @param string $cartId
-     * @param Sku $sku
-     * @param int $quantity
-     * @return Cart
+     * @param Sku[] $sku
      * @throws RepositoryException
      */
-    public function addItem(string $cartId, Sku $sku, int $quantity): Cart
+    public function fillCartWithItems(string $cartId, array $sku): Cart
     {
-        $item = new CartFillRequestItemsInner();
-        $item->setSku($sku->value);
-        $item->setQuantity($quantity);
+        $items = array_reduce(
+            $sku,
+            static function ($carry, $item) {
+                foreach ($carry as $existingItem) {
+                    if ($existingItem->getSku() === $item->value) {
+                        $existingItem->setQuantity($existingItem->getQuantity() + 1);
+                        return $carry;
+                    }
+                }
+                $carry[] = new CartFillRequestItemsInner([
+                    'sku' => $item->value,
+                    'quantity' => 1
+                ]);
+                return $carry;
+            },
+            []
+        );
 
-        $request = new CartFillRequest();
-        $request->setItems([$item]);
 
         try {
-            $response = $this->apiInstance->cartFillById($this->projectID, $cartId, $request);
+            $resuest = new CartFillRequest([
+                'items' => $items
+            ]);
+            
+            $response = $this->apiInstance->cartFillById($this->projectID, $cartId, $resuest);
         } catch (ApiException $e) {
             throw new StorefrontApiException('Failed to add item to cart', $e);
         }

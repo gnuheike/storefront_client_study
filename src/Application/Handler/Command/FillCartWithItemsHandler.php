@@ -2,23 +2,23 @@
 
 namespace StoreFrontClient\Application\Handler\Command;
 
-use StoreFrontClient\Application\Command\AddItemToCartCommand;
+use StoreFrontClient\Application\Command\FillCartWithItemsCommand;
 use StoreFrontClient\Domain\Model\Cart;
 use StoreFrontClient\Domain\Repository\CartRepositoryInterface;
 
-readonly class AddItemToCartHandler
+readonly class FillCartWithItemsHandler
 {
     public function __construct(
         private CartRepositoryInterface $cartRepository
-    ) {
+    )
+    {
     }
 
-    public function __invoke(AddItemToCartCommand $command): Cart
+    public function __invoke(FillCartWithItemsCommand $command): Cart
     {
-        return $this->cartRepository->addItem(
+        return $this->cartRepository->fillCartWithItems(
             $command->cartId,
-            $command->sku,
-            $command->quantity
+            $command->sku
         );
     }
 }

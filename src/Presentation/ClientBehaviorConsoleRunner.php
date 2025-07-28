@@ -8,20 +8,16 @@ namespace StoreFrontClient\Presentation;
 use Exception;
 use Psr\Log\LoggerInterface;
 use StoreFrontClient\Application\Service\Client\ClientApplicationService;
+use StoreFrontClient\Application\Service\Client\ClientCartApplicationService;
 use StoreFrontClient\Domain\Model\Items;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Helper\QuestionHelper;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
 
 final readonly class ClientBehaviorConsoleRunner
 {
     public function __construct(
-        private ClientApplicationService $clientApplicationService,
-        private LoggerInterface          $logger,
-        private InputInterface           $input,
-        private OutputInterface          $output,
-        private QuestionHelper           $questionHelper
+        private ClientApplicationService     $clientApplicationService,
+        private ClientCartApplicationService $clientCartApplicationService,
+        private LoggerInterface              $logger
     )
     {
     }
@@ -49,19 +45,17 @@ final readonly class ClientBehaviorConsoleRunner
     private function listCurrencies(): int
     {
         $this->logger->info('Listing currencies...');
-        $this->output->writeln('Listing currencies...');
         try {
             $currencies = $this->clientApplicationService->listCurrencies();
         } catch (Exception $e) {
             $this->logger->error($e->getMessage());
-            $this->output->writeln($e->getMessage());
             return Command::FAILURE;
         }
 
         // Display currencies as a list (name, how many client have)
-        $this->output->writeln('Available currencies:');
+        $this->logger->info('Available currencies:');
         foreach ($currencies->currencies as $currency) {
-            $this->output->writeln(sprintf(
+            $this->logger->info(sprintf(
                 '- %s (SKU: %s)',
                 $currency->name->get(),
                 $currency->sku->value
@@ -74,22 +68,18 @@ final readonly class ClientBehaviorConsoleRunner
     private function listItems(): Items|null
     {
         $this->logger->info('Listing items...');
-        $this->output->writeln('Listing items...');
         try {
-            $this->logger->info('Calling clientApplicationService->listItems()');
             $items = $this->clientApplicationService->listItems();
             $this->logger->info('Got items: ' . count($items->items));
             $this->logger->info('First item: ' . ($items->items[0]->name->get() ?? 'none'));
         } catch (Exception $e) {
             $this->logger->error('Error in listItems: ' . $e->getMessage());
-            $this->output->writeln($e->getMessage());
             return null;
         }
 
-        // Display items as a list (name, SKU, price, type)
-        $this->output->writeln('Available items:');
+        $this->logger->info('Available items:');
         foreach ($items->items as $item) {
-            $this->output->writeln(sprintf(
+            $this->logger->info(sprintf(
                 '- %s (SKU: %s, Price: %s %s, Type: %s)',
                 $item->name->get(),
                 $item->sku->value,
@@ -110,77 +100,64 @@ final readonly class ClientBehaviorConsoleRunner
     private function addItemsToCart(Items $items): void
     {
         $this->logger->info('Getting user cart...');
-        $this->output->writeln('Getting user cart...');
 
         try {
-            $carts = $this->clientApplicationService->listCarts();
+            $carts = $this->clientCartApplicationService->listCarts();
             if (count($carts->carts) === 0) {
                 $this->logger->error('No carts found for the current user');
-                $this->output->writeln('No carts found for the current user');
                 return;
             }
 
             // Use the first cart (current)
             $currentCart = $carts->carts[0];
             $this->logger->info('Current cart ID: ' . $currentCart->id);
-            $this->output->writeln('Current cart ID: ' . $currentCart->id);
 
             if (empty($items->getFreeItems())) {
                 $this->logger->error('No free items found');
-                $this->output->writeln('No free items found');
                 return;
             }
 
             if (empty($items->getPaidItems())) {
                 $this->logger->error('No non-free items found');
-                $this->output->writeln('No non-free items found');
                 return;
             }
 
             // Add free item to cart
             $freeItem = $items->getFreeItems()[0];
             $nonFreeItem = $items->getPaidItems()[0];
+            $itemsToAdd = [
+                $freeItem->sku, $freeItem->sku,
+                $nonFreeItem->sku, $nonFreeItem->sku, $nonFreeItem->sku
+            ];
 
-            $this->logger->info('Adding free item to cart: ' . $freeItem->name->get());
-            $this->output->writeln('Adding free item to cart: ' . $freeItem->name->get());
-            $this->clientApplicationService->addItemToCart($currentCart->id, $freeItem->sku);
+            $this->logger->info('Adding items to cart... ');
+            $response = $this->clientCartApplicationService->fillCartWithItems($currentCart->id, $itemsToAdd);
+            $this->logger->info('Items Count: ' . count($response->items));
 
-            // Add non-free item to cart
-            $this->logger->info('Adding non-free item to cart: ' . $nonFreeItem->name->get());
-            $this->output->writeln('Adding non-free item to cart: ' . $nonFreeItem->name->get());
-            $this->clientApplicationService->addItemToCart($currentCart->id, $nonFreeItem->sku);
 
             // Get updated cart
-            $updatedCarts = $this->clientApplicationService->listCarts();
+            $updatedCarts = $this->clientCartApplicationService->listCarts();
             $updatedCart = $updatedCarts->carts[0];
-            
+
             // Debug logging
             $this->logger->info('Updated cart ID: ' . $updatedCart->id);
-            $this->logger->info('Updated cart items count: ' . (is_array($updatedCart->items) ? count($updatedCart->items) : 'not an array'));
-            $this->logger->info('Updated cart items: ' . print_r($updatedCart->items, true));
+            $this->logger->info('Updated cart items count: ' . count($updatedCart->items));
 
             // List cart contents
-            $this->output->writeln('Cart contents:');
-            if (is_array($updatedCart->items) && !empty($updatedCart->items)) {
-                foreach ($updatedCart->items as $cartItem) {
-                    $this->output->writeln(sprintf(
-                        '- %s (SKU: %s, Price: %s %s, Quantity: %d, Free: %s)',
-                        $cartItem->name,
-                        $cartItem->sku->value,
-                        $cartItem->price->amount,
-                        $cartItem->price->currency,
-                        $cartItem->quantity,
-                        $cartItem->isFree ? 'Yes' : 'No'
-                    ));
-                }
-            } else {
-                $this->output->writeln('No items in cart');
-                $this->logger->error('No items in cart or items is not an array');
+            $this->logger->info('Cart contents:');
+            foreach ($updatedCart->items as $cartItem) {
+                $this->logger->info(sprintf(
+                    '- %s (SKU: %s, Price: %s %s, Quantity: %d, Free: %s)',
+                    $cartItem->name,
+                    $cartItem->sku->value,
+                    $cartItem->price->amount,
+                    $cartItem->price->currency,
+                    $cartItem->quantity,
+                    $cartItem->isFree ? 'Yes' : 'No'
+                ));
             }
-
         } catch (Exception $e) {
             $this->logger->error('Error in addItemsToCart: ' . $e->getMessage());
-            $this->output->writeln($e->getMessage());
         }
     }
 
