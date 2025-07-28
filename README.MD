@@ -41,6 +41,7 @@ The application communicates with a backend service using an OpenAPI client.
 
 3. Create a `.env` file in the project root with the following variables:
    ```
+   STOREFRONT_SERVER=yor_server_id (https://store.xsolla.com/api)
    STOREFRONT_PROJECT_ID=your_project_id
    STOREFRONT_ADMIN_TOKEN=your_admin_token
    STOREFRONT_CLIENT_TOKEN=your_client_token
