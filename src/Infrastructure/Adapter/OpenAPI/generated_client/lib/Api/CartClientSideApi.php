@@ -31,16 +31,24 @@ use GuzzleHttp\Client;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Psr7\MultipartStream;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\RequestOptions;
-use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\ResponseInterface;
+use GuzzleHttp\Utils;
+use InvalidArgumentException;
+use JsonException;
 use OpenAPI\Client\ApiException;
 use OpenAPI\Client\Configuration;
-use OpenAPI\Client\FormDataProcessor;
 use OpenAPI\Client\HeaderSelector;
+use OpenAPI\Client\Model\CartFillRequest;
+use OpenAPI\Client\Model\InlineObject10;
+use OpenAPI\Client\Model\InlineObject11;
+use OpenAPI\Client\Model\PutItemByCartIdRequest;
 use OpenAPI\Client\ObjectSerializer;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
+use RuntimeException;
 
 /**
  * CartClientSideApi Class Doc Comment
@@ -52,27 +60,7 @@ use OpenAPI\Client\ObjectSerializer;
  */
 class CartClientSideApi
 {
-    /**
-     * @var ClientInterface
-     */
-    protected $client;
-
-    /**
-     * @var Configuration
-     */
-    protected $config;
-
-    /**
-     * @var HeaderSelector
-     */
-    protected $headerSelector;
-
-    /**
-     * @var int Host index
-     */
-    protected $hostIndex;
-
-    /** @var string[] $contentTypes **/
+    /** @var string[] $contentTypes * */
     public const contentTypes = [
         'cartClear' => [
             'application/json',
@@ -105,32 +93,39 @@ class CartClientSideApi
             'application/json',
         ],
     ];
+    /**
+     * @var ClientInterface
+     */
+    protected $client;
+    /**
+     * @var Configuration
+     */
+    protected $config;
+    /**
+     * @var HeaderSelector
+     */
+    protected $headerSelector;
+    /**
+     * @var int Host index
+     */
+    protected $hostIndex;
 
     /**
      * @param ClientInterface $client
-     * @param Configuration   $config
-     * @param HeaderSelector  $selector
-     * @param int             $hostIndex (Optional) host index to select the list of hosts if defined in the OpenAPI spec
+     * @param Configuration $config
+     * @param HeaderSelector $selector
+     * @param int $hostIndex (Optional) host index to select the list of hosts if defined in the OpenAPI spec
      */
     public function __construct(
         ?ClientInterface $client = null,
-        ?Configuration $config = null,
-        ?HeaderSelector $selector = null,
-        int $hostIndex = 0
-    ) {
+        ?Configuration   $config = null,
+        ?HeaderSelector  $selector = null,
+        int              $hostIndex = 0
+    )
+    {
         $this->client = $client ?: new Client();
         $this->config = $config ?: Configuration::getDefaultConfiguration();
         $this->headerSelector = $selector ?: new HeaderSelector();
-        $this->hostIndex = $hostIndex;
-    }
-
-    /**
-     * Set the host index
-     *
-     * @param int $hostIndex Host index (required)
-     */
-    public function setHostIndex($hostIndex): void
-    {
         $this->hostIndex = $hostIndex;
     }
 
@@ -142,6 +137,16 @@ class CartClientSideApi
     public function getHostIndex()
     {
         return $this->hostIndex;
+    }
+
+    /**
+     * Set the host index
+     *
+     * @param int $hostIndex Host index (required)
+     */
+    public function setHostIndex($hostIndex): void
+    {
+        $this->hostIndex = $hostIndex;
     }
 
     /**
@@ -157,11 +162,11 @@ class CartClientSideApi
      *
      * Delete all cart items from current cart
      *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['cartClear'] to see the possible values for this operation
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['cartClear'] to see the possible values for this operation
      *
-     * @throws \OpenAPI\Client\ApiException on non-2xx response or if the response body is not in the expected format
-     * @throws \InvalidArgumentException
+     * @throws ApiException on non-2xx response or if the response body is not in the expected format
+     * @throws InvalidArgumentException
      * @return void
      */
     public function cartClear($project_id, string $contentType = self::contentTypes['cartClear'][0])
@@ -174,11 +179,11 @@ class CartClientSideApi
      *
      * Delete all cart items from current cart
      *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['cartClear'] to see the possible values for this operation
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['cartClear'] to see the possible values for this operation
      *
-     * @throws \OpenAPI\Client\ApiException on non-2xx response or if the response body is not in the expected format
-     * @throws \InvalidArgumentException
+     * @throws ApiException on non-2xx response or if the response body is not in the expected format
+     * @throws InvalidArgumentException
      * @return array of null, HTTP status code, HTTP response headers (array of strings)
      */
     public function cartClearWithHttpInfo($project_id, string $contentType = self::contentTypes['cartClear'][0])
@@ -192,14 +197,14 @@ class CartClientSideApi
             } catch (RequestException $e) {
                 throw new ApiException(
                     "[{$e->getCode()}] {$e->getMessage()}",
-                    (int) $e->getCode(),
+                    (int)$e->getCode(),
                     $e->getResponse() ? $e->getResponse()->getHeaders() : null,
-                    $e->getResponse() ? (string) $e->getResponse()->getBody() : null
+                    $e->getResponse() ? (string)$e->getResponse()->getBody() : null
                 );
             } catch (ConnectException $e) {
                 throw new ApiException(
                     "[{$e->getCode()}] {$e->getMessage()}",
-                    (int) $e->getCode(),
+                    (int)$e->getCode(),
                     null,
                     null
                 );
@@ -212,10 +217,124 @@ class CartClientSideApi
         } catch (ApiException $e) {
             switch ($e->getCode()) {
             }
-        
+
 
             throw $e;
         }
+    }
+
+    /**
+     * Create request for operation 'cartClear'
+     *
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['cartClear'] to see the possible values for this operation
+     *
+     * @throws InvalidArgumentException
+     * @return Request
+     */
+    public function cartClearRequest($project_id, string $contentType = self::contentTypes['cartClear'][0])
+    {
+
+        // verify the required parameter 'project_id' is set
+        if ($project_id === null || (is_array($project_id) && count($project_id) === 0)) {
+            throw new InvalidArgumentException(
+                'Missing the required parameter $project_id when calling cartClear'
+            );
+        }
+
+
+        $resourcePath = '/v2/project/{project_id}/cart/clear';
+        $formParams = [];
+        $queryParams = [];
+        $headerParams = [];
+        $httpBody = '';
+        $multipart = false;
+
+
+        // path params
+        if ($project_id !== null) {
+            $resourcePath = str_replace(
+                '{' . 'project_id' . '}',
+                ObjectSerializer::toPathValue($project_id),
+                $resourcePath
+            );
+        }
+
+
+        $headers = $this->headerSelector->selectHeaders(
+            [],
+            $contentType,
+            $multipart
+        );
+
+        // for model (json/xml)
+        if (count($formParams) > 0) {
+            if ($multipart) {
+                $multipartContents = [];
+                foreach ($formParams as $formParamName => $formParamValue) {
+                    $formParamValueItems = is_array($formParamValue) ? $formParamValue : [$formParamValue];
+                    foreach ($formParamValueItems as $formParamValueItem) {
+                        $multipartContents[] = [
+                            'name' => $formParamName,
+                            'contents' => $formParamValueItem
+                        ];
+                    }
+                }
+                // for HTTP post (form)
+                $httpBody = new MultipartStream($multipartContents);
+
+            } elseif (stripos($headers['Content-Type'], 'application/json') !== false) {
+                # if Content-Type contains "application/json", json_encode the form parameters
+                $httpBody = Utils::jsonEncode($formParams);
+            } else {
+                // for HTTP post (form)
+                $httpBody = ObjectSerializer::buildQuery($formParams);
+            }
+        }
+
+        // this endpoint requires Bearer authentication (access token)
+        if (!empty($this->config->getAccessToken())) {
+            $headers['Authorization'] = 'Bearer ' . $this->config->getAccessToken();
+        }
+
+        $defaultHeaders = [];
+        if ($this->config->getUserAgent()) {
+            $defaultHeaders['User-Agent'] = $this->config->getUserAgent();
+        }
+
+        $headers = array_merge(
+            $defaultHeaders,
+            $headerParams,
+            $headers
+        );
+
+        $operationHost = $this->config->getHost();
+        $query = ObjectSerializer::buildQuery($queryParams);
+        return new Request(
+            'PUT',
+            $operationHost . $resourcePath . ($query ? "?{$query}" : ''),
+            $headers,
+            $httpBody
+        );
+    }
+
+    /**
+     * Create http client option
+     *
+     * @return array of http client options
+     * @throws RuntimeException on file opening failure
+     */
+    protected function createHttpClientOption()
+    {
+        $options = [];
+        if ($this->config->getDebug()) {
+            $options[RequestOptions::DEBUG] = fopen($this->config->getDebugFile(), 'a');
+            if (!$options[RequestOptions::DEBUG]) {
+                throw new RuntimeException('Failed to open the debug file: ' . $this->config->getDebugFile());
+            }
+        }
+
+        return $options;
     }
 
     /**
@@ -223,11 +342,11 @@ class CartClientSideApi
      *
      * Delete all cart items from current cart
      *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['cartClear'] to see the possible values for this operation
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['cartClear'] to see the possible values for this operation
      *
-     * @throws \InvalidArgumentException
-     * @return \GuzzleHttp\Promise\PromiseInterface
+     * @throws InvalidArgumentException
+     * @return PromiseInterface
      */
     public function cartClearAsync($project_id, string $contentType = self::contentTypes['cartClear'][0])
     {
@@ -244,11 +363,11 @@ class CartClientSideApi
      *
      * Delete all cart items from current cart
      *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['cartClear'] to see the possible values for this operation
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['cartClear'] to see the possible values for this operation
      *
-     * @throws \InvalidArgumentException
-     * @return \GuzzleHttp\Promise\PromiseInterface
+     * @throws InvalidArgumentException
+     * @return PromiseInterface
      */
     public function cartClearAsyncWithHttpInfo($project_id, string $contentType = self::contentTypes['cartClear'][0])
     {
@@ -272,33 +391,109 @@ class CartClientSideApi
                         ),
                         $statusCode,
                         $response->getHeaders(),
-                        (string) $response->getBody()
+                        (string)$response->getBody()
                     );
                 }
             );
     }
 
     /**
-     * Create request for operation 'cartClear'
+     * Operation cartClearById
      *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['cartClear'] to see the possible values for this operation
+     * Delete all cart items by cart ID
      *
-     * @throws \InvalidArgumentException
-     * @return \GuzzleHttp\Psr7\Request
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $cart_id Cart ID. (required)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['cartClearById'] to see the possible values for this operation
+     *
+     * @throws ApiException on non-2xx response or if the response body is not in the expected format
+     * @throws InvalidArgumentException
+     * @return void
      */
-    public function cartClearRequest($project_id, string $contentType = self::contentTypes['cartClear'][0])
+    public function cartClearById($project_id, $cart_id, string $contentType = self::contentTypes['cartClearById'][0])
+    {
+        $this->cartClearByIdWithHttpInfo($project_id, $cart_id, $contentType);
+    }
+
+    /**
+     * Operation cartClearByIdWithHttpInfo
+     *
+     * Delete all cart items by cart ID
+     *
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $cart_id Cart ID. (required)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['cartClearById'] to see the possible values for this operation
+     *
+     * @throws ApiException on non-2xx response or if the response body is not in the expected format
+     * @throws InvalidArgumentException
+     * @return array of null, HTTP status code, HTTP response headers (array of strings)
+     */
+    public function cartClearByIdWithHttpInfo($project_id, $cart_id, string $contentType = self::contentTypes['cartClearById'][0])
+    {
+        $request = $this->cartClearByIdRequest($project_id, $cart_id, $contentType);
+
+        try {
+            $options = $this->createHttpClientOption();
+            try {
+                $response = $this->client->send($request, $options);
+            } catch (RequestException $e) {
+                throw new ApiException(
+                    "[{$e->getCode()}] {$e->getMessage()}",
+                    (int)$e->getCode(),
+                    $e->getResponse() ? $e->getResponse()->getHeaders() : null,
+                    $e->getResponse() ? (string)$e->getResponse()->getBody() : null
+                );
+            } catch (ConnectException $e) {
+                throw new ApiException(
+                    "[{$e->getCode()}] {$e->getMessage()}",
+                    (int)$e->getCode(),
+                    null,
+                    null
+                );
+            }
+
+            $statusCode = $response->getStatusCode();
+
+
+            return [null, $statusCode, $response->getHeaders()];
+        } catch (ApiException $e) {
+            switch ($e->getCode()) {
+            }
+
+
+            throw $e;
+        }
+    }
+
+    /**
+     * Create request for operation 'cartClearById'
+     *
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $cart_id Cart ID. (required)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['cartClearById'] to see the possible values for this operation
+     *
+     * @throws InvalidArgumentException
+     * @return Request
+     */
+    public function cartClearByIdRequest($project_id, $cart_id, string $contentType = self::contentTypes['cartClearById'][0])
     {
 
         // verify the required parameter 'project_id' is set
         if ($project_id === null || (is_array($project_id) && count($project_id) === 0)) {
-            throw new \InvalidArgumentException(
-                'Missing the required parameter $project_id when calling cartClear'
+            throw new InvalidArgumentException(
+                'Missing the required parameter $project_id when calling cartClearById'
+            );
+        }
+
+        // verify the required parameter 'cart_id' is set
+        if ($cart_id === null || (is_array($cart_id) && count($cart_id) === 0)) {
+            throw new InvalidArgumentException(
+                'Missing the required parameter $cart_id when calling cartClearById'
             );
         }
 
 
-        $resourcePath = '/v2/project/{project_id}/cart/clear';
+        $resourcePath = '/v2/project/{project_id}/cart/{cart_id}/clear';
         $formParams = [];
         $queryParams = [];
         $headerParams = [];
@@ -306,12 +501,19 @@ class CartClientSideApi
         $multipart = false;
 
 
-
         // path params
         if ($project_id !== null) {
             $resourcePath = str_replace(
                 '{' . 'project_id' . '}',
                 ObjectSerializer::toPathValue($project_id),
+                $resourcePath
+            );
+        }
+        // path params
+        if ($cart_id !== null) {
+            $resourcePath = str_replace(
+                '{' . 'cart_id' . '}',
+                ObjectSerializer::toPathValue($cart_id),
                 $resourcePath
             );
         }
@@ -341,7 +543,7 @@ class CartClientSideApi
 
             } elseif (stripos($headers['Content-Type'], 'application/json') !== false) {
                 # if Content-Type contains "application/json", json_encode the form parameters
-                $httpBody = \GuzzleHttp\Utils::jsonEncode($formParams);
+                $httpBody = Utils::jsonEncode($formParams);
             } else {
                 // for HTTP post (form)
                 $httpBody = ObjectSerializer::buildQuery($formParams);
@@ -375,84 +577,16 @@ class CartClientSideApi
     }
 
     /**
-     * Operation cartClearById
-     *
-     * Delete all cart items by cart ID
-     *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $cart_id Cart ID. (required)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['cartClearById'] to see the possible values for this operation
-     *
-     * @throws \OpenAPI\Client\ApiException on non-2xx response or if the response body is not in the expected format
-     * @throws \InvalidArgumentException
-     * @return void
-     */
-    public function cartClearById($project_id, $cart_id, string $contentType = self::contentTypes['cartClearById'][0])
-    {
-        $this->cartClearByIdWithHttpInfo($project_id, $cart_id, $contentType);
-    }
-
-    /**
-     * Operation cartClearByIdWithHttpInfo
-     *
-     * Delete all cart items by cart ID
-     *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $cart_id Cart ID. (required)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['cartClearById'] to see the possible values for this operation
-     *
-     * @throws \OpenAPI\Client\ApiException on non-2xx response or if the response body is not in the expected format
-     * @throws \InvalidArgumentException
-     * @return array of null, HTTP status code, HTTP response headers (array of strings)
-     */
-    public function cartClearByIdWithHttpInfo($project_id, $cart_id, string $contentType = self::contentTypes['cartClearById'][0])
-    {
-        $request = $this->cartClearByIdRequest($project_id, $cart_id, $contentType);
-
-        try {
-            $options = $this->createHttpClientOption();
-            try {
-                $response = $this->client->send($request, $options);
-            } catch (RequestException $e) {
-                throw new ApiException(
-                    "[{$e->getCode()}] {$e->getMessage()}",
-                    (int) $e->getCode(),
-                    $e->getResponse() ? $e->getResponse()->getHeaders() : null,
-                    $e->getResponse() ? (string) $e->getResponse()->getBody() : null
-                );
-            } catch (ConnectException $e) {
-                throw new ApiException(
-                    "[{$e->getCode()}] {$e->getMessage()}",
-                    (int) $e->getCode(),
-                    null,
-                    null
-                );
-            }
-
-            $statusCode = $response->getStatusCode();
-
-
-            return [null, $statusCode, $response->getHeaders()];
-        } catch (ApiException $e) {
-            switch ($e->getCode()) {
-            }
-        
-
-            throw $e;
-        }
-    }
-
-    /**
      * Operation cartClearByIdAsync
      *
      * Delete all cart items by cart ID
      *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $cart_id Cart ID. (required)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['cartClearById'] to see the possible values for this operation
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $cart_id Cart ID. (required)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['cartClearById'] to see the possible values for this operation
      *
-     * @throws \InvalidArgumentException
-     * @return \GuzzleHttp\Promise\PromiseInterface
+     * @throws InvalidArgumentException
+     * @return PromiseInterface
      */
     public function cartClearByIdAsync($project_id, $cart_id, string $contentType = self::contentTypes['cartClearById'][0])
     {
@@ -469,12 +603,12 @@ class CartClientSideApi
      *
      * Delete all cart items by cart ID
      *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $cart_id Cart ID. (required)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['cartClearById'] to see the possible values for this operation
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $cart_id Cart ID. (required)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['cartClearById'] to see the possible values for this operation
      *
-     * @throws \InvalidArgumentException
-     * @return \GuzzleHttp\Promise\PromiseInterface
+     * @throws InvalidArgumentException
+     * @return PromiseInterface
      */
     public function cartClearByIdAsyncWithHttpInfo($project_id, $cart_id, string $contentType = self::contentTypes['cartClearById'][0])
     {
@@ -498,47 +632,469 @@ class CartClientSideApi
                         ),
                         $statusCode,
                         $response->getHeaders(),
-                        (string) $response->getBody()
+                        (string)$response->getBody()
                     );
                 }
             );
     }
 
     /**
-     * Create request for operation 'cartClearById'
+     * Operation cartFill
      *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $cart_id Cart ID. (required)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['cartClearById'] to see the possible values for this operation
+     * Fill cart with items
      *
-     * @throws \InvalidArgumentException
-     * @return \GuzzleHttp\Psr7\Request
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param CartFillRequest|null $cart_fill_request cart_fill_request (optional)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['cartFill'] to see the possible values for this operation
+     *
+     * @throws ApiException on non-2xx response or if the response body is not in the expected format
+     * @throws InvalidArgumentException
+     * @return InlineObject11
      */
-    public function cartClearByIdRequest($project_id, $cart_id, string $contentType = self::contentTypes['cartClearById'][0])
+    public function cartFill($project_id, $cart_fill_request = null, string $contentType = self::contentTypes['cartFill'][0])
+    {
+        list($response) = $this->cartFillWithHttpInfo($project_id, $cart_fill_request, $contentType);
+        return $response;
+    }
+
+    /**
+     * Operation cartFillWithHttpInfo
+     *
+     * Fill cart with items
+     *
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param CartFillRequest|null $cart_fill_request (optional)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['cartFill'] to see the possible values for this operation
+     *
+     * @throws ApiException on non-2xx response or if the response body is not in the expected format
+     * @throws InvalidArgumentException
+     * @return array of \OpenAPI\Client\Model\InlineObject11, HTTP status code, HTTP response headers (array of strings)
+     */
+    public function cartFillWithHttpInfo($project_id, $cart_fill_request = null, string $contentType = self::contentTypes['cartFill'][0])
+    {
+        $request = $this->cartFillRequest($project_id, $cart_fill_request, $contentType);
+
+        try {
+            $options = $this->createHttpClientOption();
+            try {
+                $response = $this->client->send($request, $options);
+            } catch (RequestException $e) {
+                throw new ApiException(
+                    "[{$e->getCode()}] {$e->getMessage()}",
+                    (int)$e->getCode(),
+                    $e->getResponse() ? $e->getResponse()->getHeaders() : null,
+                    $e->getResponse() ? (string)$e->getResponse()->getBody() : null
+                );
+            } catch (ConnectException $e) {
+                throw new ApiException(
+                    "[{$e->getCode()}] {$e->getMessage()}",
+                    (int)$e->getCode(),
+                    null,
+                    null
+                );
+            }
+
+            $statusCode = $response->getStatusCode();
+
+
+            switch ($statusCode) {
+                case 200:
+                    return $this->handleResponseWithDataType(
+                        '\OpenAPI\Client\Model\InlineObject11',
+                        $request,
+                        $response,
+                    );
+            }
+
+
+            if ($statusCode < 200 || $statusCode > 299) {
+                throw new ApiException(
+                    sprintf(
+                        '[%d] Error connecting to the API (%s)',
+                        $statusCode,
+                        (string)$request->getUri()
+                    ),
+                    $statusCode,
+                    $response->getHeaders(),
+                    (string)$response->getBody()
+                );
+            }
+
+            return $this->handleResponseWithDataType(
+                '\OpenAPI\Client\Model\InlineObject11',
+                $request,
+                $response,
+            );
+        } catch (ApiException $e) {
+            switch ($e->getCode()) {
+                case 200:
+                    $data = ObjectSerializer::deserialize(
+                        $e->getResponseBody(),
+                        '\OpenAPI\Client\Model\InlineObject11',
+                        $e->getResponseHeaders()
+                    );
+                    $e->setResponseObject($data);
+                    throw $e;
+            }
+
+
+            throw $e;
+        }
+    }
+
+    /**
+     * Create request for operation 'cartFill'
+     *
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param CartFillRequest|null $cart_fill_request (optional)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['cartFill'] to see the possible values for this operation
+     *
+     * @throws InvalidArgumentException
+     * @return Request
+     */
+    public function cartFillRequest($project_id, $cart_fill_request = null, string $contentType = self::contentTypes['cartFill'][0])
     {
 
         // verify the required parameter 'project_id' is set
         if ($project_id === null || (is_array($project_id) && count($project_id) === 0)) {
-            throw new \InvalidArgumentException(
-                'Missing the required parameter $project_id when calling cartClearById'
-            );
-        }
-
-        // verify the required parameter 'cart_id' is set
-        if ($cart_id === null || (is_array($cart_id) && count($cart_id) === 0)) {
-            throw new \InvalidArgumentException(
-                'Missing the required parameter $cart_id when calling cartClearById'
+            throw new InvalidArgumentException(
+                'Missing the required parameter $project_id when calling cartFill'
             );
         }
 
 
-        $resourcePath = '/v2/project/{project_id}/cart/{cart_id}/clear';
+        $resourcePath = '/v2/project/{project_id}/cart/fill';
         $formParams = [];
         $queryParams = [];
         $headerParams = [];
         $httpBody = '';
         $multipart = false;
 
+
+        // path params
+        if ($project_id !== null) {
+            $resourcePath = str_replace(
+                '{' . 'project_id' . '}',
+                ObjectSerializer::toPathValue($project_id),
+                $resourcePath
+            );
+        }
+
+
+        $headers = $this->headerSelector->selectHeaders(
+            ['application/json',],
+            $contentType,
+            $multipart
+        );
+
+        // for model (json/xml)
+        if (isset($cart_fill_request)) {
+            if (stripos($headers['Content-Type'], 'application/json') !== false) {
+                # if Content-Type contains "application/json", json_encode the body
+                $httpBody = Utils::jsonEncode(ObjectSerializer::sanitizeForSerialization($cart_fill_request));
+            } else {
+                $httpBody = $cart_fill_request;
+            }
+        } elseif (count($formParams) > 0) {
+            if ($multipart) {
+                $multipartContents = [];
+                foreach ($formParams as $formParamName => $formParamValue) {
+                    $formParamValueItems = is_array($formParamValue) ? $formParamValue : [$formParamValue];
+                    foreach ($formParamValueItems as $formParamValueItem) {
+                        $multipartContents[] = [
+                            'name' => $formParamName,
+                            'contents' => $formParamValueItem
+                        ];
+                    }
+                }
+                // for HTTP post (form)
+                $httpBody = new MultipartStream($multipartContents);
+
+            } elseif (stripos($headers['Content-Type'], 'application/json') !== false) {
+                # if Content-Type contains "application/json", json_encode the form parameters
+                $httpBody = Utils::jsonEncode($formParams);
+            } else {
+                // for HTTP post (form)
+                $httpBody = ObjectSerializer::buildQuery($formParams);
+            }
+        }
+
+        // this endpoint requires Bearer authentication (access token)
+        if (!empty($this->config->getAccessToken())) {
+            $headers['Authorization'] = 'Bearer ' . $this->config->getAccessToken();
+        }
+
+        $defaultHeaders = [];
+        if ($this->config->getUserAgent()) {
+            $defaultHeaders['User-Agent'] = $this->config->getUserAgent();
+        }
+
+        $headers = array_merge(
+            $defaultHeaders,
+            $headerParams,
+            $headers
+        );
+
+        $operationHost = $this->config->getHost();
+        $query = ObjectSerializer::buildQuery($queryParams);
+        return new Request(
+            'PUT',
+            $operationHost . $resourcePath . ($query ? "?{$query}" : ''),
+            $headers,
+            $httpBody
+        );
+    }
+
+    private function handleResponseWithDataType(
+        string            $dataType,
+        RequestInterface  $request,
+        ResponseInterface $response
+    ): array
+    {
+        if ($dataType === '\SplFileObject') {
+            $content = $response->getBody(); //stream goes to serializer
+        } else {
+            $content = (string)$response->getBody();
+            if ($dataType !== 'string') {
+                try {
+                    $content = json_decode($content, false, 512, JSON_THROW_ON_ERROR);
+                } catch (JsonException $exception) {
+                    throw new ApiException(
+                        sprintf(
+                            'Error JSON decoding server response (%s)',
+                            $request->getUri()
+                        ),
+                        $response->getStatusCode(),
+                        $response->getHeaders(),
+                        $content
+                    );
+                }
+            }
+        }
+
+        return [
+            ObjectSerializer::deserialize($content, $dataType, []),
+            $response->getStatusCode(),
+            $response->getHeaders()
+        ];
+    }
+
+    /**
+     * Operation cartFillAsync
+     *
+     * Fill cart with items
+     *
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param CartFillRequest|null $cart_fill_request (optional)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['cartFill'] to see the possible values for this operation
+     *
+     * @throws InvalidArgumentException
+     * @return PromiseInterface
+     */
+    public function cartFillAsync($project_id, $cart_fill_request = null, string $contentType = self::contentTypes['cartFill'][0])
+    {
+        return $this->cartFillAsyncWithHttpInfo($project_id, $cart_fill_request, $contentType)
+            ->then(
+                function ($response) {
+                    return $response[0];
+                }
+            );
+    }
+
+    /**
+     * Operation cartFillAsyncWithHttpInfo
+     *
+     * Fill cart with items
+     *
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param CartFillRequest|null $cart_fill_request (optional)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['cartFill'] to see the possible values for this operation
+     *
+     * @throws InvalidArgumentException
+     * @return PromiseInterface
+     */
+    public function cartFillAsyncWithHttpInfo($project_id, $cart_fill_request = null, string $contentType = self::contentTypes['cartFill'][0])
+    {
+        $returnType = '\OpenAPI\Client\Model\InlineObject11';
+        $request = $this->cartFillRequest($project_id, $cart_fill_request, $contentType);
+
+        return $this->client
+            ->sendAsync($request, $this->createHttpClientOption())
+            ->then(
+                function ($response) use ($returnType) {
+                    if ($returnType === '\SplFileObject') {
+                        $content = $response->getBody(); //stream goes to serializer
+                    } else {
+                        $content = (string)$response->getBody();
+                        if ($returnType !== 'string') {
+                            $content = json_decode($content);
+                        }
+                    }
+
+                    return [
+                        ObjectSerializer::deserialize($content, $returnType, []),
+                        $response->getStatusCode(),
+                        $response->getHeaders()
+                    ];
+                },
+                function ($exception) {
+                    $response = $exception->getResponse();
+                    $statusCode = $response->getStatusCode();
+                    throw new ApiException(
+                        sprintf(
+                            '[%d] Error connecting to the API (%s)',
+                            $statusCode,
+                            $exception->getRequest()->getUri()
+                        ),
+                        $statusCode,
+                        $response->getHeaders(),
+                        (string)$response->getBody()
+                    );
+                }
+            );
+    }
+
+    /**
+     * Operation cartFillById
+     *
+     * Fill specific cart with items
+     *
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $cart_id Cart ID. (required)
+     * @param CartFillRequest|null $cart_fill_request cart_fill_request (optional)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['cartFillById'] to see the possible values for this operation
+     *
+     * @throws ApiException on non-2xx response or if the response body is not in the expected format
+     * @throws InvalidArgumentException
+     * @return InlineObject11
+     */
+    public function cartFillById($project_id, $cart_id, $cart_fill_request = null, string $contentType = self::contentTypes['cartFillById'][0])
+    {
+        list($response) = $this->cartFillByIdWithHttpInfo($project_id, $cart_id, $cart_fill_request, $contentType);
+        return $response;
+    }
+
+    /**
+     * Operation cartFillByIdWithHttpInfo
+     *
+     * Fill specific cart with items
+     *
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $cart_id Cart ID. (required)
+     * @param CartFillRequest|null $cart_fill_request (optional)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['cartFillById'] to see the possible values for this operation
+     *
+     * @throws ApiException on non-2xx response or if the response body is not in the expected format
+     * @throws InvalidArgumentException
+     * @return array of \OpenAPI\Client\Model\InlineObject11, HTTP status code, HTTP response headers (array of strings)
+     */
+    public function cartFillByIdWithHttpInfo($project_id, $cart_id, $cart_fill_request = null, string $contentType = self::contentTypes['cartFillById'][0])
+    {
+        $request = $this->cartFillByIdRequest($project_id, $cart_id, $cart_fill_request, $contentType);
+
+        try {
+            $options = $this->createHttpClientOption();
+            try {
+                $response = $this->client->send($request, $options);
+            } catch (RequestException $e) {
+                throw new ApiException(
+                    "[{$e->getCode()}] {$e->getMessage()}",
+                    (int)$e->getCode(),
+                    $e->getResponse() ? $e->getResponse()->getHeaders() : null,
+                    $e->getResponse() ? (string)$e->getResponse()->getBody() : null
+                );
+            } catch (ConnectException $e) {
+                throw new ApiException(
+                    "[{$e->getCode()}] {$e->getMessage()}",
+                    (int)$e->getCode(),
+                    null,
+                    null
+                );
+            }
+
+            $statusCode = $response->getStatusCode();
+
+
+            switch ($statusCode) {
+                case 200:
+                    return $this->handleResponseWithDataType(
+                        '\OpenAPI\Client\Model\InlineObject11',
+                        $request,
+                        $response,
+                    );
+            }
+
+
+            if ($statusCode < 200 || $statusCode > 299) {
+                throw new ApiException(
+                    sprintf(
+                        '[%d] Error connecting to the API (%s)',
+                        $statusCode,
+                        (string)$request->getUri()
+                    ),
+                    $statusCode,
+                    $response->getHeaders(),
+                    (string)$response->getBody()
+                );
+            }
+
+            return $this->handleResponseWithDataType(
+                '\OpenAPI\Client\Model\InlineObject11',
+                $request,
+                $response,
+            );
+        } catch (ApiException $e) {
+            switch ($e->getCode()) {
+                case 200:
+                    $data = ObjectSerializer::deserialize(
+                        $e->getResponseBody(),
+                        '\OpenAPI\Client\Model\InlineObject11',
+                        $e->getResponseHeaders()
+                    );
+                    $e->setResponseObject($data);
+                    throw $e;
+            }
+
+
+            throw $e;
+        }
+    }
+
+    /**
+     * Create request for operation 'cartFillById'
+     *
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $cart_id Cart ID. (required)
+     * @param CartFillRequest|null $cart_fill_request (optional)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['cartFillById'] to see the possible values for this operation
+     *
+     * @throws InvalidArgumentException
+     * @return Request
+     */
+    public function cartFillByIdRequest($project_id, $cart_id, $cart_fill_request = null, string $contentType = self::contentTypes['cartFillById'][0])
+    {
+
+        // verify the required parameter 'project_id' is set
+        if ($project_id === null || (is_array($project_id) && count($project_id) === 0)) {
+            throw new InvalidArgumentException(
+                'Missing the required parameter $project_id when calling cartFillById'
+            );
+        }
+
+        // verify the required parameter 'cart_id' is set
+        if ($cart_id === null || (is_array($cart_id) && count($cart_id) === 0)) {
+            throw new InvalidArgumentException(
+                'Missing the required parameter $cart_id when calling cartFillById'
+            );
+        }
+
+
+        $resourcePath = '/v2/project/{project_id}/cart/{cart_id}/fill';
+        $formParams = [];
+        $queryParams = [];
+        $headerParams = [];
+        $httpBody = '';
+        $multipart = false;
 
 
         // path params
@@ -560,7 +1116,280 @@ class CartClientSideApi
 
 
         $headers = $this->headerSelector->selectHeaders(
-            [],
+            ['application/json',],
+            $contentType,
+            $multipart
+        );
+
+        // for model (json/xml)
+        if (isset($cart_fill_request)) {
+            if (stripos($headers['Content-Type'], 'application/json') !== false) {
+                # if Content-Type contains "application/json", json_encode the body
+                $httpBody = Utils::jsonEncode(ObjectSerializer::sanitizeForSerialization($cart_fill_request));
+            } else {
+                $httpBody = $cart_fill_request;
+            }
+        } elseif (count($formParams) > 0) {
+            if ($multipart) {
+                $multipartContents = [];
+                foreach ($formParams as $formParamName => $formParamValue) {
+                    $formParamValueItems = is_array($formParamValue) ? $formParamValue : [$formParamValue];
+                    foreach ($formParamValueItems as $formParamValueItem) {
+                        $multipartContents[] = [
+                            'name' => $formParamName,
+                            'contents' => $formParamValueItem
+                        ];
+                    }
+                }
+                // for HTTP post (form)
+                $httpBody = new MultipartStream($multipartContents);
+
+            } elseif (stripos($headers['Content-Type'], 'application/json') !== false) {
+                # if Content-Type contains "application/json", json_encode the form parameters
+                $httpBody = Utils::jsonEncode($formParams);
+            } else {
+                // for HTTP post (form)
+                $httpBody = ObjectSerializer::buildQuery($formParams);
+            }
+        }
+
+        // this endpoint requires Bearer authentication (access token)
+        if (!empty($this->config->getAccessToken())) {
+            $headers['Authorization'] = 'Bearer ' . $this->config->getAccessToken();
+        }
+
+        $defaultHeaders = [];
+        if ($this->config->getUserAgent()) {
+            $defaultHeaders['User-Agent'] = $this->config->getUserAgent();
+        }
+
+        $headers = array_merge(
+            $defaultHeaders,
+            $headerParams,
+            $headers
+        );
+
+        $operationHost = $this->config->getHost();
+        $query = ObjectSerializer::buildQuery($queryParams);
+
+
+        return new Request(
+            'PUT',
+            $operationHost . $resourcePath . ($query ? "?{$query}" : ''),
+            $headers,
+            $httpBody
+        );
+    }
+
+    /**
+     * Operation cartFillByIdAsync
+     *
+     * Fill specific cart with items
+     *
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $cart_id Cart ID. (required)
+     * @param CartFillRequest|null $cart_fill_request (optional)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['cartFillById'] to see the possible values for this operation
+     *
+     * @throws InvalidArgumentException
+     * @return PromiseInterface
+     */
+    public function cartFillByIdAsync($project_id, $cart_id, $cart_fill_request = null, string $contentType = self::contentTypes['cartFillById'][0])
+    {
+        return $this->cartFillByIdAsyncWithHttpInfo($project_id, $cart_id, $cart_fill_request, $contentType)
+            ->then(
+                function ($response) {
+                    return $response[0];
+                }
+            );
+    }
+
+    /**
+     * Operation cartFillByIdAsyncWithHttpInfo
+     *
+     * Fill specific cart with items
+     *
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $cart_id Cart ID. (required)
+     * @param CartFillRequest|null $cart_fill_request (optional)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['cartFillById'] to see the possible values for this operation
+     *
+     * @throws InvalidArgumentException
+     * @return PromiseInterface
+     */
+    public function cartFillByIdAsyncWithHttpInfo($project_id, $cart_id, $cart_fill_request = null, string $contentType = self::contentTypes['cartFillById'][0])
+    {
+        $returnType = '\OpenAPI\Client\Model\InlineObject11';
+        $request = $this->cartFillByIdRequest($project_id, $cart_id, $cart_fill_request, $contentType);
+
+        return $this->client
+            ->sendAsync($request, $this->createHttpClientOption())
+            ->then(
+                function ($response) use ($returnType) {
+                    if ($returnType === '\SplFileObject') {
+                        $content = $response->getBody(); //stream goes to serializer
+                    } else {
+                        $content = (string)$response->getBody();
+                        if ($returnType !== 'string') {
+                            $content = json_decode($content);
+                        }
+                    }
+
+                    return [
+                        ObjectSerializer::deserialize($content, $returnType, []),
+                        $response->getStatusCode(),
+                        $response->getHeaders()
+                    ];
+                },
+                function ($exception) {
+                    $response = $exception->getResponse();
+                    $statusCode = $response->getStatusCode();
+                    throw new ApiException(
+                        sprintf(
+                            '[%d] Error connecting to the API (%s)',
+                            $statusCode,
+                            $exception->getRequest()->getUri()
+                        ),
+                        $statusCode,
+                        $response->getHeaders(),
+                        (string)$response->getBody()
+                    );
+                }
+            );
+    }
+
+    /**
+     * Operation deleteItem
+     *
+     * Delete cart item from current cart
+     *
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $item_sku Item SKU. (required)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['deleteItem'] to see the possible values for this operation
+     *
+     * @throws ApiException on non-2xx response or if the response body is not in the expected format
+     * @throws InvalidArgumentException
+     * @return void
+     */
+    public function deleteItem($project_id, $item_sku, string $contentType = self::contentTypes['deleteItem'][0])
+    {
+        $this->deleteItemWithHttpInfo($project_id, $item_sku, $contentType);
+    }
+
+    /**
+     * Operation deleteItemWithHttpInfo
+     *
+     * Delete cart item from current cart
+     *
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $item_sku Item SKU. (required)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['deleteItem'] to see the possible values for this operation
+     *
+     * @throws ApiException on non-2xx response or if the response body is not in the expected format
+     * @throws InvalidArgumentException
+     * @return array of null, HTTP status code, HTTP response headers (array of strings)
+     */
+    public function deleteItemWithHttpInfo($project_id, $item_sku, string $contentType = self::contentTypes['deleteItem'][0])
+    {
+        $request = $this->deleteItemRequest($project_id, $item_sku, $contentType);
+
+        try {
+            $options = $this->createHttpClientOption();
+            try {
+                $response = $this->client->send($request, $options);
+            } catch (RequestException $e) {
+                throw new ApiException(
+                    "[{$e->getCode()}] {$e->getMessage()}",
+                    (int)$e->getCode(),
+                    $e->getResponse() ? $e->getResponse()->getHeaders() : null,
+                    $e->getResponse() ? (string)$e->getResponse()->getBody() : null
+                );
+            } catch (ConnectException $e) {
+                throw new ApiException(
+                    "[{$e->getCode()}] {$e->getMessage()}",
+                    (int)$e->getCode(),
+                    null,
+                    null
+                );
+            }
+
+            $statusCode = $response->getStatusCode();
+
+
+            return [null, $statusCode, $response->getHeaders()];
+        } catch (ApiException $e) {
+            switch ($e->getCode()) {
+                case 404:
+                    $data = ObjectSerializer::deserialize(
+                        $e->getResponseBody(),
+                        '\OpenAPI\Client\Model\InlineObject12',
+                        $e->getResponseHeaders()
+                    );
+                    $e->setResponseObject($data);
+                    throw $e;
+            }
+
+
+            throw $e;
+        }
+    }
+
+    /**
+     * Create request for operation 'deleteItem'
+     *
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $item_sku Item SKU. (required)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['deleteItem'] to see the possible values for this operation
+     *
+     * @throws InvalidArgumentException
+     * @return Request
+     */
+    public function deleteItemRequest($project_id, $item_sku, string $contentType = self::contentTypes['deleteItem'][0])
+    {
+
+        // verify the required parameter 'project_id' is set
+        if ($project_id === null || (is_array($project_id) && count($project_id) === 0)) {
+            throw new InvalidArgumentException(
+                'Missing the required parameter $project_id when calling deleteItem'
+            );
+        }
+
+        // verify the required parameter 'item_sku' is set
+        if ($item_sku === null || (is_array($item_sku) && count($item_sku) === 0)) {
+            throw new InvalidArgumentException(
+                'Missing the required parameter $item_sku when calling deleteItem'
+            );
+        }
+
+
+        $resourcePath = '/v2/project/{project_id}/cart/item/{item_sku}';
+        $formParams = [];
+        $queryParams = [];
+        $headerParams = [];
+        $httpBody = '';
+        $multipart = false;
+
+
+        // path params
+        if ($project_id !== null) {
+            $resourcePath = str_replace(
+                '{' . 'project_id' . '}',
+                ObjectSerializer::toPathValue($project_id),
+                $resourcePath
+            );
+        }
+        // path params
+        if ($item_sku !== null) {
+            $resourcePath = str_replace(
+                '{' . 'item_sku' . '}',
+                ObjectSerializer::toPathValue($item_sku),
+                $resourcePath
+            );
+        }
+
+
+        $headers = $this->headerSelector->selectHeaders(
+            ['application/json',],
             $contentType,
             $multipart
         );
@@ -583,7 +1412,7 @@ class CartClientSideApi
 
             } elseif (stripos($headers['Content-Type'], 'application/json') !== false) {
                 # if Content-Type contains "application/json", json_encode the form parameters
-                $httpBody = \GuzzleHttp\Utils::jsonEncode($formParams);
+                $httpBody = Utils::jsonEncode($formParams);
             } else {
                 // for HTTP post (form)
                 $httpBody = ObjectSerializer::buildQuery($formParams);
@@ -609,677 +1438,11 @@ class CartClientSideApi
         $operationHost = $this->config->getHost();
         $query = ObjectSerializer::buildQuery($queryParams);
         return new Request(
-            'PUT',
+            'DELETE',
             $operationHost . $resourcePath . ($query ? "?{$query}" : ''),
             $headers,
             $httpBody
         );
-    }
-
-    /**
-     * Operation cartFill
-     *
-     * Fill cart with items
-     *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  \OpenAPI\Client\Model\CartFillRequest|null $cart_fill_request cart_fill_request (optional)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['cartFill'] to see the possible values for this operation
-     *
-     * @throws \OpenAPI\Client\ApiException on non-2xx response or if the response body is not in the expected format
-     * @throws \InvalidArgumentException
-     * @return \OpenAPI\Client\Model\InlineObject11
-     */
-    public function cartFill($project_id, $cart_fill_request = null, string $contentType = self::contentTypes['cartFill'][0])
-    {
-        list($response) = $this->cartFillWithHttpInfo($project_id, $cart_fill_request, $contentType);
-        return $response;
-    }
-
-    /**
-     * Operation cartFillWithHttpInfo
-     *
-     * Fill cart with items
-     *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  \OpenAPI\Client\Model\CartFillRequest|null $cart_fill_request (optional)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['cartFill'] to see the possible values for this operation
-     *
-     * @throws \OpenAPI\Client\ApiException on non-2xx response or if the response body is not in the expected format
-     * @throws \InvalidArgumentException
-     * @return array of \OpenAPI\Client\Model\InlineObject11, HTTP status code, HTTP response headers (array of strings)
-     */
-    public function cartFillWithHttpInfo($project_id, $cart_fill_request = null, string $contentType = self::contentTypes['cartFill'][0])
-    {
-        $request = $this->cartFillRequest($project_id, $cart_fill_request, $contentType);
-
-        try {
-            $options = $this->createHttpClientOption();
-            try {
-                $response = $this->client->send($request, $options);
-            } catch (RequestException $e) {
-                throw new ApiException(
-                    "[{$e->getCode()}] {$e->getMessage()}",
-                    (int) $e->getCode(),
-                    $e->getResponse() ? $e->getResponse()->getHeaders() : null,
-                    $e->getResponse() ? (string) $e->getResponse()->getBody() : null
-                );
-            } catch (ConnectException $e) {
-                throw new ApiException(
-                    "[{$e->getCode()}] {$e->getMessage()}",
-                    (int) $e->getCode(),
-                    null,
-                    null
-                );
-            }
-
-            $statusCode = $response->getStatusCode();
-
-
-            switch($statusCode) {
-                case 200:
-                    return $this->handleResponseWithDataType(
-                        '\OpenAPI\Client\Model\InlineObject11',
-                        $request,
-                        $response,
-                    );
-            }
-
-            
-
-            if ($statusCode < 200 || $statusCode > 299) {
-                throw new ApiException(
-                    sprintf(
-                        '[%d] Error connecting to the API (%s)',
-                        $statusCode,
-                        (string) $request->getUri()
-                    ),
-                    $statusCode,
-                    $response->getHeaders(),
-                    (string) $response->getBody()
-                );
-            }
-
-            return $this->handleResponseWithDataType(
-                '\OpenAPI\Client\Model\InlineObject11',
-                $request,
-                $response,
-            );
-        } catch (ApiException $e) {
-            switch ($e->getCode()) {
-                case 200:
-                    $data = ObjectSerializer::deserialize(
-                        $e->getResponseBody(),
-                        '\OpenAPI\Client\Model\InlineObject11',
-                        $e->getResponseHeaders()
-                    );
-                    $e->setResponseObject($data);
-                    throw $e;
-            }
-        
-
-            throw $e;
-        }
-    }
-
-    /**
-     * Operation cartFillAsync
-     *
-     * Fill cart with items
-     *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  \OpenAPI\Client\Model\CartFillRequest|null $cart_fill_request (optional)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['cartFill'] to see the possible values for this operation
-     *
-     * @throws \InvalidArgumentException
-     * @return \GuzzleHttp\Promise\PromiseInterface
-     */
-    public function cartFillAsync($project_id, $cart_fill_request = null, string $contentType = self::contentTypes['cartFill'][0])
-    {
-        return $this->cartFillAsyncWithHttpInfo($project_id, $cart_fill_request, $contentType)
-            ->then(
-                function ($response) {
-                    return $response[0];
-                }
-            );
-    }
-
-    /**
-     * Operation cartFillAsyncWithHttpInfo
-     *
-     * Fill cart with items
-     *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  \OpenAPI\Client\Model\CartFillRequest|null $cart_fill_request (optional)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['cartFill'] to see the possible values for this operation
-     *
-     * @throws \InvalidArgumentException
-     * @return \GuzzleHttp\Promise\PromiseInterface
-     */
-    public function cartFillAsyncWithHttpInfo($project_id, $cart_fill_request = null, string $contentType = self::contentTypes['cartFill'][0])
-    {
-        $returnType = '\OpenAPI\Client\Model\InlineObject11';
-        $request = $this->cartFillRequest($project_id, $cart_fill_request, $contentType);
-
-        return $this->client
-            ->sendAsync($request, $this->createHttpClientOption())
-            ->then(
-                function ($response) use ($returnType) {
-                    if ($returnType === '\SplFileObject') {
-                        $content = $response->getBody(); //stream goes to serializer
-                    } else {
-                        $content = (string) $response->getBody();
-                        if ($returnType !== 'string') {
-                            $content = json_decode($content);
-                        }
-                    }
-
-                    return [
-                        ObjectSerializer::deserialize($content, $returnType, []),
-                        $response->getStatusCode(),
-                        $response->getHeaders()
-                    ];
-                },
-                function ($exception) {
-                    $response = $exception->getResponse();
-                    $statusCode = $response->getStatusCode();
-                    throw new ApiException(
-                        sprintf(
-                            '[%d] Error connecting to the API (%s)',
-                            $statusCode,
-                            $exception->getRequest()->getUri()
-                        ),
-                        $statusCode,
-                        $response->getHeaders(),
-                        (string) $response->getBody()
-                    );
-                }
-            );
-    }
-
-    /**
-     * Create request for operation 'cartFill'
-     *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  \OpenAPI\Client\Model\CartFillRequest|null $cart_fill_request (optional)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['cartFill'] to see the possible values for this operation
-     *
-     * @throws \InvalidArgumentException
-     * @return \GuzzleHttp\Psr7\Request
-     */
-    public function cartFillRequest($project_id, $cart_fill_request = null, string $contentType = self::contentTypes['cartFill'][0])
-    {
-
-        // verify the required parameter 'project_id' is set
-        if ($project_id === null || (is_array($project_id) && count($project_id) === 0)) {
-            throw new \InvalidArgumentException(
-                'Missing the required parameter $project_id when calling cartFill'
-            );
-        }
-
-
-
-        $resourcePath = '/v2/project/{project_id}/cart/fill';
-        $formParams = [];
-        $queryParams = [];
-        $headerParams = [];
-        $httpBody = '';
-        $multipart = false;
-
-
-
-        // path params
-        if ($project_id !== null) {
-            $resourcePath = str_replace(
-                '{' . 'project_id' . '}',
-                ObjectSerializer::toPathValue($project_id),
-                $resourcePath
-            );
-        }
-
-
-        $headers = $this->headerSelector->selectHeaders(
-            ['application/json', ],
-            $contentType,
-            $multipart
-        );
-
-        // for model (json/xml)
-        if (isset($cart_fill_request)) {
-            if (stripos($headers['Content-Type'], 'application/json') !== false) {
-                # if Content-Type contains "application/json", json_encode the body
-                $httpBody = \GuzzleHttp\Utils::jsonEncode(ObjectSerializer::sanitizeForSerialization($cart_fill_request));
-            } else {
-                $httpBody = $cart_fill_request;
-            }
-        } elseif (count($formParams) > 0) {
-            if ($multipart) {
-                $multipartContents = [];
-                foreach ($formParams as $formParamName => $formParamValue) {
-                    $formParamValueItems = is_array($formParamValue) ? $formParamValue : [$formParamValue];
-                    foreach ($formParamValueItems as $formParamValueItem) {
-                        $multipartContents[] = [
-                            'name' => $formParamName,
-                            'contents' => $formParamValueItem
-                        ];
-                    }
-                }
-                // for HTTP post (form)
-                $httpBody = new MultipartStream($multipartContents);
-
-            } elseif (stripos($headers['Content-Type'], 'application/json') !== false) {
-                # if Content-Type contains "application/json", json_encode the form parameters
-                $httpBody = \GuzzleHttp\Utils::jsonEncode($formParams);
-            } else {
-                // for HTTP post (form)
-                $httpBody = ObjectSerializer::buildQuery($formParams);
-            }
-        }
-
-        // this endpoint requires Bearer authentication (access token)
-        if (!empty($this->config->getAccessToken())) {
-            $headers['Authorization'] = 'Bearer ' . $this->config->getAccessToken();
-        }
-
-        $defaultHeaders = [];
-        if ($this->config->getUserAgent()) {
-            $defaultHeaders['User-Agent'] = $this->config->getUserAgent();
-        }
-
-        $headers = array_merge(
-            $defaultHeaders,
-            $headerParams,
-            $headers
-        );
-
-        $operationHost = $this->config->getHost();
-        $query = ObjectSerializer::buildQuery($queryParams);
-        return new Request(
-            'PUT',
-            $operationHost . $resourcePath . ($query ? "?{$query}" : ''),
-            $headers,
-            $httpBody
-        );
-    }
-
-    /**
-     * Operation cartFillById
-     *
-     * Fill specific cart with items
-     *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $cart_id Cart ID. (required)
-     * @param  \OpenAPI\Client\Model\CartFillRequest|null $cart_fill_request cart_fill_request (optional)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['cartFillById'] to see the possible values for this operation
-     *
-     * @throws \OpenAPI\Client\ApiException on non-2xx response or if the response body is not in the expected format
-     * @throws \InvalidArgumentException
-     * @return \OpenAPI\Client\Model\InlineObject11
-     */
-    public function cartFillById($project_id, $cart_id, $cart_fill_request = null, string $contentType = self::contentTypes['cartFillById'][0])
-    {
-        list($response) = $this->cartFillByIdWithHttpInfo($project_id, $cart_id, $cart_fill_request, $contentType);
-        return $response;
-    }
-
-    /**
-     * Operation cartFillByIdWithHttpInfo
-     *
-     * Fill specific cart with items
-     *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $cart_id Cart ID. (required)
-     * @param  \OpenAPI\Client\Model\CartFillRequest|null $cart_fill_request (optional)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['cartFillById'] to see the possible values for this operation
-     *
-     * @throws \OpenAPI\Client\ApiException on non-2xx response or if the response body is not in the expected format
-     * @throws \InvalidArgumentException
-     * @return array of \OpenAPI\Client\Model\InlineObject11, HTTP status code, HTTP response headers (array of strings)
-     */
-    public function cartFillByIdWithHttpInfo($project_id, $cart_id, $cart_fill_request = null, string $contentType = self::contentTypes['cartFillById'][0])
-    {
-        $request = $this->cartFillByIdRequest($project_id, $cart_id, $cart_fill_request, $contentType);
-
-        try {
-            $options = $this->createHttpClientOption();
-            try {
-                $response = $this->client->send($request, $options);
-            } catch (RequestException $e) {
-                throw new ApiException(
-                    "[{$e->getCode()}] {$e->getMessage()}",
-                    (int) $e->getCode(),
-                    $e->getResponse() ? $e->getResponse()->getHeaders() : null,
-                    $e->getResponse() ? (string) $e->getResponse()->getBody() : null
-                );
-            } catch (ConnectException $e) {
-                throw new ApiException(
-                    "[{$e->getCode()}] {$e->getMessage()}",
-                    (int) $e->getCode(),
-                    null,
-                    null
-                );
-            }
-
-            $statusCode = $response->getStatusCode();
-
-
-            switch($statusCode) {
-                case 200:
-                    return $this->handleResponseWithDataType(
-                        '\OpenAPI\Client\Model\InlineObject11',
-                        $request,
-                        $response,
-                    );
-            }
-
-            
-
-            if ($statusCode < 200 || $statusCode > 299) {
-                throw new ApiException(
-                    sprintf(
-                        '[%d] Error connecting to the API (%s)',
-                        $statusCode,
-                        (string) $request->getUri()
-                    ),
-                    $statusCode,
-                    $response->getHeaders(),
-                    (string) $response->getBody()
-                );
-            }
-
-            return $this->handleResponseWithDataType(
-                '\OpenAPI\Client\Model\InlineObject11',
-                $request,
-                $response,
-            );
-        } catch (ApiException $e) {
-            switch ($e->getCode()) {
-                case 200:
-                    $data = ObjectSerializer::deserialize(
-                        $e->getResponseBody(),
-                        '\OpenAPI\Client\Model\InlineObject11',
-                        $e->getResponseHeaders()
-                    );
-                    $e->setResponseObject($data);
-                    throw $e;
-            }
-        
-
-            throw $e;
-        }
-    }
-
-    /**
-     * Operation cartFillByIdAsync
-     *
-     * Fill specific cart with items
-     *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $cart_id Cart ID. (required)
-     * @param  \OpenAPI\Client\Model\CartFillRequest|null $cart_fill_request (optional)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['cartFillById'] to see the possible values for this operation
-     *
-     * @throws \InvalidArgumentException
-     * @return \GuzzleHttp\Promise\PromiseInterface
-     */
-    public function cartFillByIdAsync($project_id, $cart_id, $cart_fill_request = null, string $contentType = self::contentTypes['cartFillById'][0])
-    {
-        return $this->cartFillByIdAsyncWithHttpInfo($project_id, $cart_id, $cart_fill_request, $contentType)
-            ->then(
-                function ($response) {
-                    return $response[0];
-                }
-            );
-    }
-
-    /**
-     * Operation cartFillByIdAsyncWithHttpInfo
-     *
-     * Fill specific cart with items
-     *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $cart_id Cart ID. (required)
-     * @param  \OpenAPI\Client\Model\CartFillRequest|null $cart_fill_request (optional)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['cartFillById'] to see the possible values for this operation
-     *
-     * @throws \InvalidArgumentException
-     * @return \GuzzleHttp\Promise\PromiseInterface
-     */
-    public function cartFillByIdAsyncWithHttpInfo($project_id, $cart_id, $cart_fill_request = null, string $contentType = self::contentTypes['cartFillById'][0])
-    {
-        $returnType = '\OpenAPI\Client\Model\InlineObject11';
-        $request = $this->cartFillByIdRequest($project_id, $cart_id, $cart_fill_request, $contentType);
-
-        return $this->client
-            ->sendAsync($request, $this->createHttpClientOption())
-            ->then(
-                function ($response) use ($returnType) {
-                    if ($returnType === '\SplFileObject') {
-                        $content = $response->getBody(); //stream goes to serializer
-                    } else {
-                        $content = (string) $response->getBody();
-                        if ($returnType !== 'string') {
-                            $content = json_decode($content);
-                        }
-                    }
-
-                    return [
-                        ObjectSerializer::deserialize($content, $returnType, []),
-                        $response->getStatusCode(),
-                        $response->getHeaders()
-                    ];
-                },
-                function ($exception) {
-                    $response = $exception->getResponse();
-                    $statusCode = $response->getStatusCode();
-                    throw new ApiException(
-                        sprintf(
-                            '[%d] Error connecting to the API (%s)',
-                            $statusCode,
-                            $exception->getRequest()->getUri()
-                        ),
-                        $statusCode,
-                        $response->getHeaders(),
-                        (string) $response->getBody()
-                    );
-                }
-            );
-    }
-
-    /**
-     * Create request for operation 'cartFillById'
-     *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $cart_id Cart ID. (required)
-     * @param  \OpenAPI\Client\Model\CartFillRequest|null $cart_fill_request (optional)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['cartFillById'] to see the possible values for this operation
-     *
-     * @throws \InvalidArgumentException
-     * @return \GuzzleHttp\Psr7\Request
-     */
-    public function cartFillByIdRequest($project_id, $cart_id, $cart_fill_request = null, string $contentType = self::contentTypes['cartFillById'][0])
-    {
-
-        // verify the required parameter 'project_id' is set
-        if ($project_id === null || (is_array($project_id) && count($project_id) === 0)) {
-            throw new \InvalidArgumentException(
-                'Missing the required parameter $project_id when calling cartFillById'
-            );
-        }
-
-        // verify the required parameter 'cart_id' is set
-        if ($cart_id === null || (is_array($cart_id) && count($cart_id) === 0)) {
-            throw new \InvalidArgumentException(
-                'Missing the required parameter $cart_id when calling cartFillById'
-            );
-        }
-
-
-
-        $resourcePath = '/v2/project/{project_id}/cart/{cart_id}/fill';
-        $formParams = [];
-        $queryParams = [];
-        $headerParams = [];
-        $httpBody = '';
-        $multipart = false;
-
-
-
-        // path params
-        if ($project_id !== null) {
-            $resourcePath = str_replace(
-                '{' . 'project_id' . '}',
-                ObjectSerializer::toPathValue($project_id),
-                $resourcePath
-            );
-        }
-        // path params
-        if ($cart_id !== null) {
-            $resourcePath = str_replace(
-                '{' . 'cart_id' . '}',
-                ObjectSerializer::toPathValue($cart_id),
-                $resourcePath
-            );
-        }
-
-
-        $headers = $this->headerSelector->selectHeaders(
-            ['application/json', ],
-            $contentType,
-            $multipart
-        );
-
-        // for model (json/xml)
-        if (isset($cart_fill_request)) {
-            if (stripos($headers['Content-Type'], 'application/json') !== false) {
-                # if Content-Type contains "application/json", json_encode the body
-                $httpBody = \GuzzleHttp\Utils::jsonEncode(ObjectSerializer::sanitizeForSerialization($cart_fill_request));
-            } else {
-                $httpBody = $cart_fill_request;
-            }
-        } elseif (count($formParams) > 0) {
-            if ($multipart) {
-                $multipartContents = [];
-                foreach ($formParams as $formParamName => $formParamValue) {
-                    $formParamValueItems = is_array($formParamValue) ? $formParamValue : [$formParamValue];
-                    foreach ($formParamValueItems as $formParamValueItem) {
-                        $multipartContents[] = [
-                            'name' => $formParamName,
-                            'contents' => $formParamValueItem
-                        ];
-                    }
-                }
-                // for HTTP post (form)
-                $httpBody = new MultipartStream($multipartContents);
-
-            } elseif (stripos($headers['Content-Type'], 'application/json') !== false) {
-                # if Content-Type contains "application/json", json_encode the form parameters
-                $httpBody = \GuzzleHttp\Utils::jsonEncode($formParams);
-            } else {
-                // for HTTP post (form)
-                $httpBody = ObjectSerializer::buildQuery($formParams);
-            }
-        }
-
-        // this endpoint requires Bearer authentication (access token)
-        if (!empty($this->config->getAccessToken())) {
-            $headers['Authorization'] = 'Bearer ' . $this->config->getAccessToken();
-        }
-
-        $defaultHeaders = [];
-        if ($this->config->getUserAgent()) {
-            $defaultHeaders['User-Agent'] = $this->config->getUserAgent();
-        }
-
-        $headers = array_merge(
-            $defaultHeaders,
-            $headerParams,
-            $headers
-        );
-
-        $operationHost = $this->config->getHost();
-        $query = ObjectSerializer::buildQuery($queryParams);
-        return new Request(
-            'PUT',
-            $operationHost . $resourcePath . ($query ? "?{$query}" : ''),
-            $headers,
-            $httpBody
-        );
-    }
-
-    /**
-     * Operation deleteItem
-     *
-     * Delete cart item from current cart
-     *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $item_sku Item SKU. (required)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['deleteItem'] to see the possible values for this operation
-     *
-     * @throws \OpenAPI\Client\ApiException on non-2xx response or if the response body is not in the expected format
-     * @throws \InvalidArgumentException
-     * @return void
-     */
-    public function deleteItem($project_id, $item_sku, string $contentType = self::contentTypes['deleteItem'][0])
-    {
-        $this->deleteItemWithHttpInfo($project_id, $item_sku, $contentType);
-    }
-
-    /**
-     * Operation deleteItemWithHttpInfo
-     *
-     * Delete cart item from current cart
-     *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $item_sku Item SKU. (required)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['deleteItem'] to see the possible values for this operation
-     *
-     * @throws \OpenAPI\Client\ApiException on non-2xx response or if the response body is not in the expected format
-     * @throws \InvalidArgumentException
-     * @return array of null, HTTP status code, HTTP response headers (array of strings)
-     */
-    public function deleteItemWithHttpInfo($project_id, $item_sku, string $contentType = self::contentTypes['deleteItem'][0])
-    {
-        $request = $this->deleteItemRequest($project_id, $item_sku, $contentType);
-
-        try {
-            $options = $this->createHttpClientOption();
-            try {
-                $response = $this->client->send($request, $options);
-            } catch (RequestException $e) {
-                throw new ApiException(
-                    "[{$e->getCode()}] {$e->getMessage()}",
-                    (int) $e->getCode(),
-                    $e->getResponse() ? $e->getResponse()->getHeaders() : null,
-                    $e->getResponse() ? (string) $e->getResponse()->getBody() : null
-                );
-            } catch (ConnectException $e) {
-                throw new ApiException(
-                    "[{$e->getCode()}] {$e->getMessage()}",
-                    (int) $e->getCode(),
-                    null,
-                    null
-                );
-            }
-
-            $statusCode = $response->getStatusCode();
-
-
-            return [null, $statusCode, $response->getHeaders()];
-        } catch (ApiException $e) {
-            switch ($e->getCode()) {
-                case 404:
-                    $data = ObjectSerializer::deserialize(
-                        $e->getResponseBody(),
-                        '\OpenAPI\Client\Model\InlineObject12',
-                        $e->getResponseHeaders()
-                    );
-                    $e->setResponseObject($data);
-                    throw $e;
-            }
-        
-
-            throw $e;
-        }
     }
 
     /**
@@ -1287,12 +1450,12 @@ class CartClientSideApi
      *
      * Delete cart item from current cart
      *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $item_sku Item SKU. (required)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['deleteItem'] to see the possible values for this operation
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $item_sku Item SKU. (required)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['deleteItem'] to see the possible values for this operation
      *
-     * @throws \InvalidArgumentException
-     * @return \GuzzleHttp\Promise\PromiseInterface
+     * @throws InvalidArgumentException
+     * @return PromiseInterface
      */
     public function deleteItemAsync($project_id, $item_sku, string $contentType = self::contentTypes['deleteItem'][0])
     {
@@ -1309,12 +1472,12 @@ class CartClientSideApi
      *
      * Delete cart item from current cart
      *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $item_sku Item SKU. (required)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['deleteItem'] to see the possible values for this operation
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $item_sku Item SKU. (required)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['deleteItem'] to see the possible values for this operation
      *
-     * @throws \InvalidArgumentException
-     * @return \GuzzleHttp\Promise\PromiseInterface
+     * @throws InvalidArgumentException
+     * @return PromiseInterface
      */
     public function deleteItemAsyncWithHttpInfo($project_id, $item_sku, string $contentType = self::contentTypes['deleteItem'][0])
     {
@@ -1338,122 +1501,10 @@ class CartClientSideApi
                         ),
                         $statusCode,
                         $response->getHeaders(),
-                        (string) $response->getBody()
+                        (string)$response->getBody()
                     );
                 }
             );
-    }
-
-    /**
-     * Create request for operation 'deleteItem'
-     *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $item_sku Item SKU. (required)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['deleteItem'] to see the possible values for this operation
-     *
-     * @throws \InvalidArgumentException
-     * @return \GuzzleHttp\Psr7\Request
-     */
-    public function deleteItemRequest($project_id, $item_sku, string $contentType = self::contentTypes['deleteItem'][0])
-    {
-
-        // verify the required parameter 'project_id' is set
-        if ($project_id === null || (is_array($project_id) && count($project_id) === 0)) {
-            throw new \InvalidArgumentException(
-                'Missing the required parameter $project_id when calling deleteItem'
-            );
-        }
-
-        // verify the required parameter 'item_sku' is set
-        if ($item_sku === null || (is_array($item_sku) && count($item_sku) === 0)) {
-            throw new \InvalidArgumentException(
-                'Missing the required parameter $item_sku when calling deleteItem'
-            );
-        }
-
-
-        $resourcePath = '/v2/project/{project_id}/cart/item/{item_sku}';
-        $formParams = [];
-        $queryParams = [];
-        $headerParams = [];
-        $httpBody = '';
-        $multipart = false;
-
-
-
-        // path params
-        if ($project_id !== null) {
-            $resourcePath = str_replace(
-                '{' . 'project_id' . '}',
-                ObjectSerializer::toPathValue($project_id),
-                $resourcePath
-            );
-        }
-        // path params
-        if ($item_sku !== null) {
-            $resourcePath = str_replace(
-                '{' . 'item_sku' . '}',
-                ObjectSerializer::toPathValue($item_sku),
-                $resourcePath
-            );
-        }
-
-
-        $headers = $this->headerSelector->selectHeaders(
-            ['application/json', ],
-            $contentType,
-            $multipart
-        );
-
-        // for model (json/xml)
-        if (count($formParams) > 0) {
-            if ($multipart) {
-                $multipartContents = [];
-                foreach ($formParams as $formParamName => $formParamValue) {
-                    $formParamValueItems = is_array($formParamValue) ? $formParamValue : [$formParamValue];
-                    foreach ($formParamValueItems as $formParamValueItem) {
-                        $multipartContents[] = [
-                            'name' => $formParamName,
-                            'contents' => $formParamValueItem
-                        ];
-                    }
-                }
-                // for HTTP post (form)
-                $httpBody = new MultipartStream($multipartContents);
-
-            } elseif (stripos($headers['Content-Type'], 'application/json') !== false) {
-                # if Content-Type contains "application/json", json_encode the form parameters
-                $httpBody = \GuzzleHttp\Utils::jsonEncode($formParams);
-            } else {
-                // for HTTP post (form)
-                $httpBody = ObjectSerializer::buildQuery($formParams);
-            }
-        }
-
-        // this endpoint requires Bearer authentication (access token)
-        if (!empty($this->config->getAccessToken())) {
-            $headers['Authorization'] = 'Bearer ' . $this->config->getAccessToken();
-        }
-
-        $defaultHeaders = [];
-        if ($this->config->getUserAgent()) {
-            $defaultHeaders['User-Agent'] = $this->config->getUserAgent();
-        }
-
-        $headers = array_merge(
-            $defaultHeaders,
-            $headerParams,
-            $headers
-        );
-
-        $operationHost = $this->config->getHost();
-        $query = ObjectSerializer::buildQuery($queryParams);
-        return new Request(
-            'DELETE',
-            $operationHost . $resourcePath . ($query ? "?{$query}" : ''),
-            $headers,
-            $httpBody
-        );
     }
 
     /**
@@ -1461,13 +1512,13 @@ class CartClientSideApi
      *
      * Delete cart item by cart ID
      *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $cart_id Cart ID. (required)
-     * @param  string $item_sku Item SKU. (required)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['deleteItemByCartId'] to see the possible values for this operation
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $cart_id Cart ID. (required)
+     * @param string $item_sku Item SKU. (required)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['deleteItemByCartId'] to see the possible values for this operation
      *
-     * @throws \OpenAPI\Client\ApiException on non-2xx response or if the response body is not in the expected format
-     * @throws \InvalidArgumentException
+     * @throws ApiException on non-2xx response or if the response body is not in the expected format
+     * @throws InvalidArgumentException
      * @return void
      */
     public function deleteItemByCartId($project_id, $cart_id, $item_sku, string $contentType = self::contentTypes['deleteItemByCartId'][0])
@@ -1480,13 +1531,13 @@ class CartClientSideApi
      *
      * Delete cart item by cart ID
      *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $cart_id Cart ID. (required)
-     * @param  string $item_sku Item SKU. (required)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['deleteItemByCartId'] to see the possible values for this operation
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $cart_id Cart ID. (required)
+     * @param string $item_sku Item SKU. (required)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['deleteItemByCartId'] to see the possible values for this operation
      *
-     * @throws \OpenAPI\Client\ApiException on non-2xx response or if the response body is not in the expected format
-     * @throws \InvalidArgumentException
+     * @throws ApiException on non-2xx response or if the response body is not in the expected format
+     * @throws InvalidArgumentException
      * @return array of null, HTTP status code, HTTP response headers (array of strings)
      */
     public function deleteItemByCartIdWithHttpInfo($project_id, $cart_id, $item_sku, string $contentType = self::contentTypes['deleteItemByCartId'][0])
@@ -1500,14 +1551,14 @@ class CartClientSideApi
             } catch (RequestException $e) {
                 throw new ApiException(
                     "[{$e->getCode()}] {$e->getMessage()}",
-                    (int) $e->getCode(),
+                    (int)$e->getCode(),
                     $e->getResponse() ? $e->getResponse()->getHeaders() : null,
-                    $e->getResponse() ? (string) $e->getResponse()->getBody() : null
+                    $e->getResponse() ? (string)$e->getResponse()->getBody() : null
                 );
             } catch (ConnectException $e) {
                 throw new ApiException(
                     "[{$e->getCode()}] {$e->getMessage()}",
-                    (int) $e->getCode(),
+                    (int)$e->getCode(),
                     null,
                     null
                 );
@@ -1528,107 +1579,43 @@ class CartClientSideApi
                     $e->setResponseObject($data);
                     throw $e;
             }
-        
+
 
             throw $e;
         }
     }
 
     /**
-     * Operation deleteItemByCartIdAsync
-     *
-     * Delete cart item by cart ID
-     *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $cart_id Cart ID. (required)
-     * @param  string $item_sku Item SKU. (required)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['deleteItemByCartId'] to see the possible values for this operation
-     *
-     * @throws \InvalidArgumentException
-     * @return \GuzzleHttp\Promise\PromiseInterface
-     */
-    public function deleteItemByCartIdAsync($project_id, $cart_id, $item_sku, string $contentType = self::contentTypes['deleteItemByCartId'][0])
-    {
-        return $this->deleteItemByCartIdAsyncWithHttpInfo($project_id, $cart_id, $item_sku, $contentType)
-            ->then(
-                function ($response) {
-                    return $response[0];
-                }
-            );
-    }
-
-    /**
-     * Operation deleteItemByCartIdAsyncWithHttpInfo
-     *
-     * Delete cart item by cart ID
-     *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $cart_id Cart ID. (required)
-     * @param  string $item_sku Item SKU. (required)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['deleteItemByCartId'] to see the possible values for this operation
-     *
-     * @throws \InvalidArgumentException
-     * @return \GuzzleHttp\Promise\PromiseInterface
-     */
-    public function deleteItemByCartIdAsyncWithHttpInfo($project_id, $cart_id, $item_sku, string $contentType = self::contentTypes['deleteItemByCartId'][0])
-    {
-        $returnType = '';
-        $request = $this->deleteItemByCartIdRequest($project_id, $cart_id, $item_sku, $contentType);
-
-        return $this->client
-            ->sendAsync($request, $this->createHttpClientOption())
-            ->then(
-                function ($response) use ($returnType) {
-                    return [null, $response->getStatusCode(), $response->getHeaders()];
-                },
-                function ($exception) {
-                    $response = $exception->getResponse();
-                    $statusCode = $response->getStatusCode();
-                    throw new ApiException(
-                        sprintf(
-                            '[%d] Error connecting to the API (%s)',
-                            $statusCode,
-                            $exception->getRequest()->getUri()
-                        ),
-                        $statusCode,
-                        $response->getHeaders(),
-                        (string) $response->getBody()
-                    );
-                }
-            );
-    }
-
-    /**
      * Create request for operation 'deleteItemByCartId'
      *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $cart_id Cart ID. (required)
-     * @param  string $item_sku Item SKU. (required)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['deleteItemByCartId'] to see the possible values for this operation
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $cart_id Cart ID. (required)
+     * @param string $item_sku Item SKU. (required)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['deleteItemByCartId'] to see the possible values for this operation
      *
-     * @throws \InvalidArgumentException
-     * @return \GuzzleHttp\Psr7\Request
+     * @throws InvalidArgumentException
+     * @return Request
      */
     public function deleteItemByCartIdRequest($project_id, $cart_id, $item_sku, string $contentType = self::contentTypes['deleteItemByCartId'][0])
     {
 
         // verify the required parameter 'project_id' is set
         if ($project_id === null || (is_array($project_id) && count($project_id) === 0)) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 'Missing the required parameter $project_id when calling deleteItemByCartId'
             );
         }
 
         // verify the required parameter 'cart_id' is set
         if ($cart_id === null || (is_array($cart_id) && count($cart_id) === 0)) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 'Missing the required parameter $cart_id when calling deleteItemByCartId'
             );
         }
 
         // verify the required parameter 'item_sku' is set
         if ($item_sku === null || (is_array($item_sku) && count($item_sku) === 0)) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 'Missing the required parameter $item_sku when calling deleteItemByCartId'
             );
         }
@@ -1640,7 +1627,6 @@ class CartClientSideApi
         $headerParams = [];
         $httpBody = '';
         $multipart = false;
-
 
 
         // path params
@@ -1670,7 +1656,7 @@ class CartClientSideApi
 
 
         $headers = $this->headerSelector->selectHeaders(
-            ['application/json', ],
+            ['application/json',],
             $contentType,
             $multipart
         );
@@ -1693,7 +1679,7 @@ class CartClientSideApi
 
             } elseif (stripos($headers['Content-Type'], 'application/json') !== false) {
                 # if Content-Type contains "application/json", json_encode the form parameters
-                $httpBody = \GuzzleHttp\Utils::jsonEncode($formParams);
+                $httpBody = Utils::jsonEncode($formParams);
             } else {
                 // for HTTP post (form)
                 $httpBody = ObjectSerializer::buildQuery($formParams);
@@ -1727,19 +1713,83 @@ class CartClientSideApi
     }
 
     /**
+     * Operation deleteItemByCartIdAsync
+     *
+     * Delete cart item by cart ID
+     *
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $cart_id Cart ID. (required)
+     * @param string $item_sku Item SKU. (required)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['deleteItemByCartId'] to see the possible values for this operation
+     *
+     * @throws InvalidArgumentException
+     * @return PromiseInterface
+     */
+    public function deleteItemByCartIdAsync($project_id, $cart_id, $item_sku, string $contentType = self::contentTypes['deleteItemByCartId'][0])
+    {
+        return $this->deleteItemByCartIdAsyncWithHttpInfo($project_id, $cart_id, $item_sku, $contentType)
+            ->then(
+                function ($response) {
+                    return $response[0];
+                }
+            );
+    }
+
+    /**
+     * Operation deleteItemByCartIdAsyncWithHttpInfo
+     *
+     * Delete cart item by cart ID
+     *
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $cart_id Cart ID. (required)
+     * @param string $item_sku Item SKU. (required)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['deleteItemByCartId'] to see the possible values for this operation
+     *
+     * @throws InvalidArgumentException
+     * @return PromiseInterface
+     */
+    public function deleteItemByCartIdAsyncWithHttpInfo($project_id, $cart_id, $item_sku, string $contentType = self::contentTypes['deleteItemByCartId'][0])
+    {
+        $returnType = '';
+        $request = $this->deleteItemByCartIdRequest($project_id, $cart_id, $item_sku, $contentType);
+
+        return $this->client
+            ->sendAsync($request, $this->createHttpClientOption())
+            ->then(
+                function ($response) use ($returnType) {
+                    return [null, $response->getStatusCode(), $response->getHeaders()];
+                },
+                function ($exception) {
+                    $response = $exception->getResponse();
+                    $statusCode = $response->getStatusCode();
+                    throw new ApiException(
+                        sprintf(
+                            '[%d] Error connecting to the API (%s)',
+                            $statusCode,
+                            $exception->getRequest()->getUri()
+                        ),
+                        $statusCode,
+                        $response->getHeaders(),
+                        (string)$response->getBody()
+                    );
+                }
+            );
+    }
+
+    /**
      * Operation getCartById
      *
      * Get cart by cart ID
      *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $cart_id Cart ID. (required)
-     * @param  string|null $currency The item price currency displayed in the cart. Three-letter currency code per [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217). Check the documentation for detailed information about [currencies supported by Xsolla](https://developers.xsolla.com/doc/pay-station/references/supported-currencies/). (optional, default to 'USD')
-     * @param  string|null $locale Response language. Two-letter lowercase language code per ISO 639-1. (optional, default to 'en')
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['getCartById'] to see the possible values for this operation
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $cart_id Cart ID. (required)
+     * @param string|null $currency The item price currency displayed in the cart. Three-letter currency code per [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217). Check the documentation for detailed information about [currencies supported by Xsolla](https://developers.xsolla.com/doc/pay-station/references/supported-currencies/). (optional, default to 'USD')
+     * @param string|null $locale Response language. Two-letter lowercase language code per ISO 639-1. (optional, default to 'en')
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['getCartById'] to see the possible values for this operation
      *
-     * @throws \OpenAPI\Client\ApiException on non-2xx response or if the response body is not in the expected format
-     * @throws \InvalidArgumentException
-     * @return \OpenAPI\Client\Model\InlineObject10
+     * @throws ApiException on non-2xx response or if the response body is not in the expected format
+     * @throws InvalidArgumentException
+     * @return InlineObject10
      */
     public function getCartById($project_id, $cart_id, $currency = 'USD', $locale = 'en', string $contentType = self::contentTypes['getCartById'][0])
     {
@@ -1752,14 +1802,14 @@ class CartClientSideApi
      *
      * Get cart by cart ID
      *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $cart_id Cart ID. (required)
-     * @param  string|null $currency The item price currency displayed in the cart. Three-letter currency code per [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217). Check the documentation for detailed information about [currencies supported by Xsolla](https://developers.xsolla.com/doc/pay-station/references/supported-currencies/). (optional, default to 'USD')
-     * @param  string|null $locale Response language. Two-letter lowercase language code per ISO 639-1. (optional, default to 'en')
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['getCartById'] to see the possible values for this operation
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $cart_id Cart ID. (required)
+     * @param string|null $currency The item price currency displayed in the cart. Three-letter currency code per [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217). Check the documentation for detailed information about [currencies supported by Xsolla](https://developers.xsolla.com/doc/pay-station/references/supported-currencies/). (optional, default to 'USD')
+     * @param string|null $locale Response language. Two-letter lowercase language code per ISO 639-1. (optional, default to 'en')
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['getCartById'] to see the possible values for this operation
      *
-     * @throws \OpenAPI\Client\ApiException on non-2xx response or if the response body is not in the expected format
-     * @throws \InvalidArgumentException
+     * @throws ApiException on non-2xx response or if the response body is not in the expected format
+     * @throws InvalidArgumentException
      * @return array of \OpenAPI\Client\Model\InlineObject10, HTTP status code, HTTP response headers (array of strings)
      */
     public function getCartByIdWithHttpInfo($project_id, $cart_id, $currency = 'USD', $locale = 'en', string $contentType = self::contentTypes['getCartById'][0])
@@ -1773,14 +1823,14 @@ class CartClientSideApi
             } catch (RequestException $e) {
                 throw new ApiException(
                     "[{$e->getCode()}] {$e->getMessage()}",
-                    (int) $e->getCode(),
+                    (int)$e->getCode(),
                     $e->getResponse() ? $e->getResponse()->getHeaders() : null,
-                    $e->getResponse() ? (string) $e->getResponse()->getBody() : null
+                    $e->getResponse() ? (string)$e->getResponse()->getBody() : null
                 );
             } catch (ConnectException $e) {
                 throw new ApiException(
                     "[{$e->getCode()}] {$e->getMessage()}",
-                    (int) $e->getCode(),
+                    (int)$e->getCode(),
                     null,
                     null
                 );
@@ -1789,7 +1839,7 @@ class CartClientSideApi
             $statusCode = $response->getStatusCode();
 
 
-            switch($statusCode) {
+            switch ($statusCode) {
                 case 200:
                     return $this->handleResponseWithDataType(
                         '\OpenAPI\Client\Model\InlineObject10',
@@ -1798,18 +1848,17 @@ class CartClientSideApi
                     );
             }
 
-            
 
             if ($statusCode < 200 || $statusCode > 299) {
                 throw new ApiException(
                     sprintf(
                         '[%d] Error connecting to the API (%s)',
                         $statusCode,
-                        (string) $request->getUri()
+                        (string)$request->getUri()
                     ),
                     $statusCode,
                     $response->getHeaders(),
-                    (string) $response->getBody()
+                    (string)$response->getBody()
                 );
             }
 
@@ -1829,121 +1878,40 @@ class CartClientSideApi
                     $e->setResponseObject($data);
                     throw $e;
             }
-        
+
 
             throw $e;
         }
     }
 
     /**
-     * Operation getCartByIdAsync
-     *
-     * Get cart by cart ID
-     *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $cart_id Cart ID. (required)
-     * @param  string|null $currency The item price currency displayed in the cart. Three-letter currency code per [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217). Check the documentation for detailed information about [currencies supported by Xsolla](https://developers.xsolla.com/doc/pay-station/references/supported-currencies/). (optional, default to 'USD')
-     * @param  string|null $locale Response language. Two-letter lowercase language code per ISO 639-1. (optional, default to 'en')
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['getCartById'] to see the possible values for this operation
-     *
-     * @throws \InvalidArgumentException
-     * @return \GuzzleHttp\Promise\PromiseInterface
-     */
-    public function getCartByIdAsync($project_id, $cart_id, $currency = 'USD', $locale = 'en', string $contentType = self::contentTypes['getCartById'][0])
-    {
-        return $this->getCartByIdAsyncWithHttpInfo($project_id, $cart_id, $currency, $locale, $contentType)
-            ->then(
-                function ($response) {
-                    return $response[0];
-                }
-            );
-    }
-
-    /**
-     * Operation getCartByIdAsyncWithHttpInfo
-     *
-     * Get cart by cart ID
-     *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $cart_id Cart ID. (required)
-     * @param  string|null $currency The item price currency displayed in the cart. Three-letter currency code per [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217). Check the documentation for detailed information about [currencies supported by Xsolla](https://developers.xsolla.com/doc/pay-station/references/supported-currencies/). (optional, default to 'USD')
-     * @param  string|null $locale Response language. Two-letter lowercase language code per ISO 639-1. (optional, default to 'en')
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['getCartById'] to see the possible values for this operation
-     *
-     * @throws \InvalidArgumentException
-     * @return \GuzzleHttp\Promise\PromiseInterface
-     */
-    public function getCartByIdAsyncWithHttpInfo($project_id, $cart_id, $currency = 'USD', $locale = 'en', string $contentType = self::contentTypes['getCartById'][0])
-    {
-        $returnType = '\OpenAPI\Client\Model\InlineObject10';
-        $request = $this->getCartByIdRequest($project_id, $cart_id, $currency, $locale, $contentType);
-
-        return $this->client
-            ->sendAsync($request, $this->createHttpClientOption())
-            ->then(
-                function ($response) use ($returnType) {
-                    if ($returnType === '\SplFileObject') {
-                        $content = $response->getBody(); //stream goes to serializer
-                    } else {
-                        $content = (string) $response->getBody();
-                        if ($returnType !== 'string') {
-                            $content = json_decode($content);
-                        }
-                    }
-
-                    return [
-                        ObjectSerializer::deserialize($content, $returnType, []),
-                        $response->getStatusCode(),
-                        $response->getHeaders()
-                    ];
-                },
-                function ($exception) {
-                    $response = $exception->getResponse();
-                    $statusCode = $response->getStatusCode();
-                    throw new ApiException(
-                        sprintf(
-                            '[%d] Error connecting to the API (%s)',
-                            $statusCode,
-                            $exception->getRequest()->getUri()
-                        ),
-                        $statusCode,
-                        $response->getHeaders(),
-                        (string) $response->getBody()
-                    );
-                }
-            );
-    }
-
-    /**
      * Create request for operation 'getCartById'
      *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $cart_id Cart ID. (required)
-     * @param  string|null $currency The item price currency displayed in the cart. Three-letter currency code per [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217). Check the documentation for detailed information about [currencies supported by Xsolla](https://developers.xsolla.com/doc/pay-station/references/supported-currencies/). (optional, default to 'USD')
-     * @param  string|null $locale Response language. Two-letter lowercase language code per ISO 639-1. (optional, default to 'en')
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['getCartById'] to see the possible values for this operation
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $cart_id Cart ID. (required)
+     * @param string|null $currency The item price currency displayed in the cart. Three-letter currency code per [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217). Check the documentation for detailed information about [currencies supported by Xsolla](https://developers.xsolla.com/doc/pay-station/references/supported-currencies/). (optional, default to 'USD')
+     * @param string|null $locale Response language. Two-letter lowercase language code per ISO 639-1. (optional, default to 'en')
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['getCartById'] to see the possible values for this operation
      *
-     * @throws \InvalidArgumentException
-     * @return \GuzzleHttp\Psr7\Request
+     * @throws InvalidArgumentException
+     * @return Request
      */
     public function getCartByIdRequest($project_id, $cart_id, $currency = 'USD', $locale = 'en', string $contentType = self::contentTypes['getCartById'][0])
     {
 
         // verify the required parameter 'project_id' is set
         if ($project_id === null || (is_array($project_id) && count($project_id) === 0)) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 'Missing the required parameter $project_id when calling getCartById'
             );
         }
 
         // verify the required parameter 'cart_id' is set
         if ($cart_id === null || (is_array($cart_id) && count($cart_id) === 0)) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 'Missing the required parameter $cart_id when calling getCartById'
             );
         }
-
-
 
 
         $resourcePath = '/v2/project/{project_id}/cart/{cart_id}';
@@ -1992,7 +1960,7 @@ class CartClientSideApi
 
 
         $headers = $this->headerSelector->selectHeaders(
-            ['application/json', ],
+            ['application/json',],
             $contentType,
             $multipart
         );
@@ -2015,7 +1983,7 @@ class CartClientSideApi
 
             } elseif (stripos($headers['Content-Type'], 'application/json') !== false) {
                 # if Content-Type contains "application/json", json_encode the form parameters
-                $httpBody = \GuzzleHttp\Utils::jsonEncode($formParams);
+                $httpBody = Utils::jsonEncode($formParams);
             } else {
                 // for HTTP post (form)
                 $httpBody = ObjectSerializer::buildQuery($formParams);
@@ -2049,128 +2017,22 @@ class CartClientSideApi
     }
 
     /**
-     * Operation getUserCart
+     * Operation getCartByIdAsync
      *
-     * Get current user&#39;s cart
+     * Get cart by cart ID
      *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string|null $currency The item price currency displayed in the cart. Three-letter currency code per [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217). Check the documentation for detailed information about [currencies supported by Xsolla](https://developers.xsolla.com/doc/pay-station/references/supported-currencies/). (optional, default to 'USD')
-     * @param  string|null $locale Response language. Two-letter lowercase language code per ISO 639-1. (optional, default to 'en')
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['getUserCart'] to see the possible values for this operation
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $cart_id Cart ID. (required)
+     * @param string|null $currency The item price currency displayed in the cart. Three-letter currency code per [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217). Check the documentation for detailed information about [currencies supported by Xsolla](https://developers.xsolla.com/doc/pay-station/references/supported-currencies/). (optional, default to 'USD')
+     * @param string|null $locale Response language. Two-letter lowercase language code per ISO 639-1. (optional, default to 'en')
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['getCartById'] to see the possible values for this operation
      *
-     * @throws \OpenAPI\Client\ApiException on non-2xx response or if the response body is not in the expected format
-     * @throws \InvalidArgumentException
-     * @return \OpenAPI\Client\Model\InlineObject10
+     * @throws InvalidArgumentException
+     * @return PromiseInterface
      */
-    public function getUserCart($project_id, $currency = 'USD', $locale = 'en', string $contentType = self::contentTypes['getUserCart'][0])
+    public function getCartByIdAsync($project_id, $cart_id, $currency = 'USD', $locale = 'en', string $contentType = self::contentTypes['getCartById'][0])
     {
-        list($response) = $this->getUserCartWithHttpInfo($project_id, $currency, $locale, $contentType);
-        return $response;
-    }
-
-    /**
-     * Operation getUserCartWithHttpInfo
-     *
-     * Get current user&#39;s cart
-     *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string|null $currency The item price currency displayed in the cart. Three-letter currency code per [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217). Check the documentation for detailed information about [currencies supported by Xsolla](https://developers.xsolla.com/doc/pay-station/references/supported-currencies/). (optional, default to 'USD')
-     * @param  string|null $locale Response language. Two-letter lowercase language code per ISO 639-1. (optional, default to 'en')
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['getUserCart'] to see the possible values for this operation
-     *
-     * @throws \OpenAPI\Client\ApiException on non-2xx response or if the response body is not in the expected format
-     * @throws \InvalidArgumentException
-     * @return array of \OpenAPI\Client\Model\InlineObject10, HTTP status code, HTTP response headers (array of strings)
-     */
-    public function getUserCartWithHttpInfo($project_id, $currency = 'USD', $locale = 'en', string $contentType = self::contentTypes['getUserCart'][0])
-    {
-        $request = $this->getUserCartRequest($project_id, $currency, $locale, $contentType);
-
-        try {
-            $options = $this->createHttpClientOption();
-            try {
-                $response = $this->client->send($request, $options);
-            } catch (RequestException $e) {
-                throw new ApiException(
-                    "[{$e->getCode()}] {$e->getMessage()}",
-                    (int) $e->getCode(),
-                    $e->getResponse() ? $e->getResponse()->getHeaders() : null,
-                    $e->getResponse() ? (string) $e->getResponse()->getBody() : null
-                );
-            } catch (ConnectException $e) {
-                throw new ApiException(
-                    "[{$e->getCode()}] {$e->getMessage()}",
-                    (int) $e->getCode(),
-                    null,
-                    null
-                );
-            }
-
-            $statusCode = $response->getStatusCode();
-
-
-            switch($statusCode) {
-                case 200:
-                    return $this->handleResponseWithDataType(
-                        '\OpenAPI\Client\Model\InlineObject10',
-                        $request,
-                        $response,
-                    );
-            }
-
-            
-
-            if ($statusCode < 200 || $statusCode > 299) {
-                throw new ApiException(
-                    sprintf(
-                        '[%d] Error connecting to the API (%s)',
-                        $statusCode,
-                        (string) $request->getUri()
-                    ),
-                    $statusCode,
-                    $response->getHeaders(),
-                    (string) $response->getBody()
-                );
-            }
-
-            return $this->handleResponseWithDataType(
-                '\OpenAPI\Client\Model\InlineObject10',
-                $request,
-                $response,
-            );
-        } catch (ApiException $e) {
-            switch ($e->getCode()) {
-                case 200:
-                    $data = ObjectSerializer::deserialize(
-                        $e->getResponseBody(),
-                        '\OpenAPI\Client\Model\InlineObject10',
-                        $e->getResponseHeaders()
-                    );
-                    $e->setResponseObject($data);
-                    throw $e;
-            }
-        
-
-            throw $e;
-        }
-    }
-
-    /**
-     * Operation getUserCartAsync
-     *
-     * Get current user&#39;s cart
-     *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string|null $currency The item price currency displayed in the cart. Three-letter currency code per [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217). Check the documentation for detailed information about [currencies supported by Xsolla](https://developers.xsolla.com/doc/pay-station/references/supported-currencies/). (optional, default to 'USD')
-     * @param  string|null $locale Response language. Two-letter lowercase language code per ISO 639-1. (optional, default to 'en')
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['getUserCart'] to see the possible values for this operation
-     *
-     * @throws \InvalidArgumentException
-     * @return \GuzzleHttp\Promise\PromiseInterface
-     */
-    public function getUserCartAsync($project_id, $currency = 'USD', $locale = 'en', string $contentType = self::contentTypes['getUserCart'][0])
-    {
-        return $this->getUserCartAsyncWithHttpInfo($project_id, $currency, $locale, $contentType)
+        return $this->getCartByIdAsyncWithHttpInfo($project_id, $cart_id, $currency, $locale, $contentType)
             ->then(
                 function ($response) {
                     return $response[0];
@@ -2179,22 +2041,23 @@ class CartClientSideApi
     }
 
     /**
-     * Operation getUserCartAsyncWithHttpInfo
+     * Operation getCartByIdAsyncWithHttpInfo
      *
-     * Get current user&#39;s cart
+     * Get cart by cart ID
      *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string|null $currency The item price currency displayed in the cart. Three-letter currency code per [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217). Check the documentation for detailed information about [currencies supported by Xsolla](https://developers.xsolla.com/doc/pay-station/references/supported-currencies/). (optional, default to 'USD')
-     * @param  string|null $locale Response language. Two-letter lowercase language code per ISO 639-1. (optional, default to 'en')
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['getUserCart'] to see the possible values for this operation
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $cart_id Cart ID. (required)
+     * @param string|null $currency The item price currency displayed in the cart. Three-letter currency code per [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217). Check the documentation for detailed information about [currencies supported by Xsolla](https://developers.xsolla.com/doc/pay-station/references/supported-currencies/). (optional, default to 'USD')
+     * @param string|null $locale Response language. Two-letter lowercase language code per ISO 639-1. (optional, default to 'en')
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['getCartById'] to see the possible values for this operation
      *
-     * @throws \InvalidArgumentException
-     * @return \GuzzleHttp\Promise\PromiseInterface
+     * @throws InvalidArgumentException
+     * @return PromiseInterface
      */
-    public function getUserCartAsyncWithHttpInfo($project_id, $currency = 'USD', $locale = 'en', string $contentType = self::contentTypes['getUserCart'][0])
+    public function getCartByIdAsyncWithHttpInfo($project_id, $cart_id, $currency = 'USD', $locale = 'en', string $contentType = self::contentTypes['getCartById'][0])
     {
         $returnType = '\OpenAPI\Client\Model\InlineObject10';
-        $request = $this->getUserCartRequest($project_id, $currency, $locale, $contentType);
+        $request = $this->getCartByIdRequest($project_id, $cart_id, $currency, $locale, $contentType);
 
         return $this->client
             ->sendAsync($request, $this->createHttpClientOption())
@@ -2203,7 +2066,7 @@ class CartClientSideApi
                     if ($returnType === '\SplFileObject') {
                         $content = $response->getBody(); //stream goes to serializer
                     } else {
-                        $content = (string) $response->getBody();
+                        $content = (string)$response->getBody();
                         if ($returnType !== 'string') {
                             $content = json_decode($content);
                         }
@@ -2226,34 +2089,138 @@ class CartClientSideApi
                         ),
                         $statusCode,
                         $response->getHeaders(),
-                        (string) $response->getBody()
+                        (string)$response->getBody()
                     );
                 }
             );
     }
 
     /**
+     * Operation getUserCart
+     *
+     * Get current user&#39;s cart
+     *
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string|null $currency The item price currency displayed in the cart. Three-letter currency code per [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217). Check the documentation for detailed information about [currencies supported by Xsolla](https://developers.xsolla.com/doc/pay-station/references/supported-currencies/). (optional, default to 'USD')
+     * @param string|null $locale Response language. Two-letter lowercase language code per ISO 639-1. (optional, default to 'en')
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['getUserCart'] to see the possible values for this operation
+     *
+     * @throws ApiException on non-2xx response or if the response body is not in the expected format
+     * @throws InvalidArgumentException
+     * @return InlineObject10
+     */
+    public function getUserCart($project_id, $currency = 'USD', $locale = 'en', string $contentType = self::contentTypes['getUserCart'][0])
+    {
+        list($response) = $this->getUserCartWithHttpInfo($project_id, $currency, $locale, $contentType);
+        return $response;
+    }
+
+    /**
+     * Operation getUserCartWithHttpInfo
+     *
+     * Get current user&#39;s cart
+     *
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string|null $currency The item price currency displayed in the cart. Three-letter currency code per [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217). Check the documentation for detailed information about [currencies supported by Xsolla](https://developers.xsolla.com/doc/pay-station/references/supported-currencies/). (optional, default to 'USD')
+     * @param string|null $locale Response language. Two-letter lowercase language code per ISO 639-1. (optional, default to 'en')
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['getUserCart'] to see the possible values for this operation
+     *
+     * @throws ApiException on non-2xx response or if the response body is not in the expected format
+     * @throws InvalidArgumentException
+     * @return array of \OpenAPI\Client\Model\InlineObject10, HTTP status code, HTTP response headers (array of strings)
+     */
+    public function getUserCartWithHttpInfo($project_id, $currency = 'USD', $locale = 'en', string $contentType = self::contentTypes['getUserCart'][0])
+    {
+        $request = $this->getUserCartRequest($project_id, $currency, $locale, $contentType);
+
+        try {
+            $options = $this->createHttpClientOption();
+            try {
+                $response = $this->client->send($request, $options);
+            } catch (RequestException $e) {
+                throw new ApiException(
+                    "[{$e->getCode()}] {$e->getMessage()}",
+                    (int)$e->getCode(),
+                    $e->getResponse() ? $e->getResponse()->getHeaders() : null,
+                    $e->getResponse() ? (string)$e->getResponse()->getBody() : null
+                );
+            } catch (ConnectException $e) {
+                throw new ApiException(
+                    "[{$e->getCode()}] {$e->getMessage()}",
+                    (int)$e->getCode(),
+                    null,
+                    null
+                );
+            }
+
+            $statusCode = $response->getStatusCode();
+
+
+            switch ($statusCode) {
+                case 200:
+                    return $this->handleResponseWithDataType(
+                        '\OpenAPI\Client\Model\InlineObject10',
+                        $request,
+                        $response,
+                    );
+            }
+
+
+            if ($statusCode < 200 || $statusCode > 299) {
+                throw new ApiException(
+                    sprintf(
+                        '[%d] Error connecting to the API (%s)',
+                        $statusCode,
+                        (string)$request->getUri()
+                    ),
+                    $statusCode,
+                    $response->getHeaders(),
+                    (string)$response->getBody()
+                );
+            }
+
+            return $this->handleResponseWithDataType(
+                '\OpenAPI\Client\Model\InlineObject10',
+                $request,
+                $response,
+            );
+        } catch (ApiException $e) {
+            switch ($e->getCode()) {
+                case 200:
+                    $data = ObjectSerializer::deserialize(
+                        $e->getResponseBody(),
+                        '\OpenAPI\Client\Model\InlineObject10',
+                        $e->getResponseHeaders()
+                    );
+                    $e->setResponseObject($data);
+                    throw $e;
+            }
+
+
+            throw $e;
+        }
+    }
+
+    /**
      * Create request for operation 'getUserCart'
      *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string|null $currency The item price currency displayed in the cart. Three-letter currency code per [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217). Check the documentation for detailed information about [currencies supported by Xsolla](https://developers.xsolla.com/doc/pay-station/references/supported-currencies/). (optional, default to 'USD')
-     * @param  string|null $locale Response language. Two-letter lowercase language code per ISO 639-1. (optional, default to 'en')
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['getUserCart'] to see the possible values for this operation
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string|null $currency The item price currency displayed in the cart. Three-letter currency code per [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217). Check the documentation for detailed information about [currencies supported by Xsolla](https://developers.xsolla.com/doc/pay-station/references/supported-currencies/). (optional, default to 'USD')
+     * @param string|null $locale Response language. Two-letter lowercase language code per ISO 639-1. (optional, default to 'en')
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['getUserCart'] to see the possible values for this operation
      *
-     * @throws \InvalidArgumentException
-     * @return \GuzzleHttp\Psr7\Request
+     * @throws InvalidArgumentException
+     * @return Request
      */
     public function getUserCartRequest($project_id, $currency = 'USD', $locale = 'en', string $contentType = self::contentTypes['getUserCart'][0])
     {
 
         // verify the required parameter 'project_id' is set
         if ($project_id === null || (is_array($project_id) && count($project_id) === 0)) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 'Missing the required parameter $project_id when calling getUserCart'
             );
         }
-
-
 
 
         $resourcePath = '/v2/project/{project_id}/cart';
@@ -2294,7 +2261,7 @@ class CartClientSideApi
 
 
         $headers = $this->headerSelector->selectHeaders(
-            ['application/json', ],
+            ['application/json',],
             $contentType,
             $multipart
         );
@@ -2317,7 +2284,7 @@ class CartClientSideApi
 
             } elseif (stripos($headers['Content-Type'], 'application/json') !== false) {
                 # if Content-Type contains "application/json", json_encode the form parameters
-                $httpBody = \GuzzleHttp\Utils::jsonEncode($formParams);
+                $httpBody = Utils::jsonEncode($formParams);
             } else {
                 // for HTTP post (form)
                 $httpBody = ObjectSerializer::buildQuery($formParams);
@@ -2351,17 +2318,94 @@ class CartClientSideApi
     }
 
     /**
+     * Operation getUserCartAsync
+     *
+     * Get current user&#39;s cart
+     *
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string|null $currency The item price currency displayed in the cart. Three-letter currency code per [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217). Check the documentation for detailed information about [currencies supported by Xsolla](https://developers.xsolla.com/doc/pay-station/references/supported-currencies/). (optional, default to 'USD')
+     * @param string|null $locale Response language. Two-letter lowercase language code per ISO 639-1. (optional, default to 'en')
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['getUserCart'] to see the possible values for this operation
+     *
+     * @throws InvalidArgumentException
+     * @return PromiseInterface
+     */
+    public function getUserCartAsync($project_id, $currency = 'USD', $locale = 'en', string $contentType = self::contentTypes['getUserCart'][0])
+    {
+        return $this->getUserCartAsyncWithHttpInfo($project_id, $currency, $locale, $contentType)
+            ->then(
+                function ($response) {
+                    return $response[0];
+                }
+            );
+    }
+
+    /**
+     * Operation getUserCartAsyncWithHttpInfo
+     *
+     * Get current user&#39;s cart
+     *
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string|null $currency The item price currency displayed in the cart. Three-letter currency code per [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217). Check the documentation for detailed information about [currencies supported by Xsolla](https://developers.xsolla.com/doc/pay-station/references/supported-currencies/). (optional, default to 'USD')
+     * @param string|null $locale Response language. Two-letter lowercase language code per ISO 639-1. (optional, default to 'en')
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['getUserCart'] to see the possible values for this operation
+     *
+     * @throws InvalidArgumentException
+     * @return PromiseInterface
+     */
+    public function getUserCartAsyncWithHttpInfo($project_id, $currency = 'USD', $locale = 'en', string $contentType = self::contentTypes['getUserCart'][0])
+    {
+        $returnType = '\OpenAPI\Client\Model\InlineObject10';
+        $request = $this->getUserCartRequest($project_id, $currency, $locale, $contentType);
+
+        return $this->client
+            ->sendAsync($request, $this->createHttpClientOption())
+            ->then(
+                function ($response) use ($returnType) {
+                    if ($returnType === '\SplFileObject') {
+                        $content = $response->getBody(); //stream goes to serializer
+                    } else {
+                        $content = (string)$response->getBody();
+                        if ($returnType !== 'string') {
+                            $content = json_decode($content);
+                        }
+                    }
+
+                    return [
+                        ObjectSerializer::deserialize($content, $returnType, []),
+                        $response->getStatusCode(),
+                        $response->getHeaders()
+                    ];
+                },
+                function ($exception) {
+                    $response = $exception->getResponse();
+                    $statusCode = $response->getStatusCode();
+                    throw new ApiException(
+                        sprintf(
+                            '[%d] Error connecting to the API (%s)',
+                            $statusCode,
+                            $exception->getRequest()->getUri()
+                        ),
+                        $statusCode,
+                        $response->getHeaders(),
+                        (string)$response->getBody()
+                    );
+                }
+            );
+    }
+
+    /**
      * Operation putItem
      *
      * Update cart item from current cart
      *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $item_sku Item SKU. (required)
-     * @param  \OpenAPI\Client\Model\PutItemByCartIdRequest|null $put_item_by_cart_id_request put_item_by_cart_id_request (optional)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['putItem'] to see the possible values for this operation
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $item_sku Item SKU. (required)
+     * @param PutItemByCartIdRequest|null $put_item_by_cart_id_request put_item_by_cart_id_request (optional)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['putItem'] to see the possible values for this operation
      *
-     * @throws \OpenAPI\Client\ApiException on non-2xx response or if the response body is not in the expected format
-     * @throws \InvalidArgumentException
+     * @throws ApiException on non-2xx response or if the response body is not in the expected format
+     * @throws InvalidArgumentException
      * @return void
      */
     public function putItem($project_id, $item_sku, $put_item_by_cart_id_request = null, string $contentType = self::contentTypes['putItem'][0])
@@ -2374,13 +2418,13 @@ class CartClientSideApi
      *
      * Update cart item from current cart
      *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $item_sku Item SKU. (required)
-     * @param  \OpenAPI\Client\Model\PutItemByCartIdRequest|null $put_item_by_cart_id_request (optional)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['putItem'] to see the possible values for this operation
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $item_sku Item SKU. (required)
+     * @param PutItemByCartIdRequest|null $put_item_by_cart_id_request (optional)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['putItem'] to see the possible values for this operation
      *
-     * @throws \OpenAPI\Client\ApiException on non-2xx response or if the response body is not in the expected format
-     * @throws \InvalidArgumentException
+     * @throws ApiException on non-2xx response or if the response body is not in the expected format
+     * @throws InvalidArgumentException
      * @return array of null, HTTP status code, HTTP response headers (array of strings)
      */
     public function putItemWithHttpInfo($project_id, $item_sku, $put_item_by_cart_id_request = null, string $contentType = self::contentTypes['putItem'][0])
@@ -2394,14 +2438,14 @@ class CartClientSideApi
             } catch (RequestException $e) {
                 throw new ApiException(
                     "[{$e->getCode()}] {$e->getMessage()}",
-                    (int) $e->getCode(),
+                    (int)$e->getCode(),
                     $e->getResponse() ? $e->getResponse()->getHeaders() : null,
-                    $e->getResponse() ? (string) $e->getResponse()->getBody() : null
+                    $e->getResponse() ? (string)$e->getResponse()->getBody() : null
                 );
             } catch (ConnectException $e) {
                 throw new ApiException(
                     "[{$e->getCode()}] {$e->getMessage()}",
-                    (int) $e->getCode(),
+                    (int)$e->getCode(),
                     null,
                     null
                 );
@@ -2430,104 +2474,39 @@ class CartClientSideApi
                     $e->setResponseObject($data);
                     throw $e;
             }
-        
+
 
             throw $e;
         }
     }
 
     /**
-     * Operation putItemAsync
-     *
-     * Update cart item from current cart
-     *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $item_sku Item SKU. (required)
-     * @param  \OpenAPI\Client\Model\PutItemByCartIdRequest|null $put_item_by_cart_id_request (optional)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['putItem'] to see the possible values for this operation
-     *
-     * @throws \InvalidArgumentException
-     * @return \GuzzleHttp\Promise\PromiseInterface
-     */
-    public function putItemAsync($project_id, $item_sku, $put_item_by_cart_id_request = null, string $contentType = self::contentTypes['putItem'][0])
-    {
-        return $this->putItemAsyncWithHttpInfo($project_id, $item_sku, $put_item_by_cart_id_request, $contentType)
-            ->then(
-                function ($response) {
-                    return $response[0];
-                }
-            );
-    }
-
-    /**
-     * Operation putItemAsyncWithHttpInfo
-     *
-     * Update cart item from current cart
-     *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $item_sku Item SKU. (required)
-     * @param  \OpenAPI\Client\Model\PutItemByCartIdRequest|null $put_item_by_cart_id_request (optional)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['putItem'] to see the possible values for this operation
-     *
-     * @throws \InvalidArgumentException
-     * @return \GuzzleHttp\Promise\PromiseInterface
-     */
-    public function putItemAsyncWithHttpInfo($project_id, $item_sku, $put_item_by_cart_id_request = null, string $contentType = self::contentTypes['putItem'][0])
-    {
-        $returnType = '';
-        $request = $this->putItemRequest($project_id, $item_sku, $put_item_by_cart_id_request, $contentType);
-
-        return $this->client
-            ->sendAsync($request, $this->createHttpClientOption())
-            ->then(
-                function ($response) use ($returnType) {
-                    return [null, $response->getStatusCode(), $response->getHeaders()];
-                },
-                function ($exception) {
-                    $response = $exception->getResponse();
-                    $statusCode = $response->getStatusCode();
-                    throw new ApiException(
-                        sprintf(
-                            '[%d] Error connecting to the API (%s)',
-                            $statusCode,
-                            $exception->getRequest()->getUri()
-                        ),
-                        $statusCode,
-                        $response->getHeaders(),
-                        (string) $response->getBody()
-                    );
-                }
-            );
-    }
-
-    /**
      * Create request for operation 'putItem'
      *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $item_sku Item SKU. (required)
-     * @param  \OpenAPI\Client\Model\PutItemByCartIdRequest|null $put_item_by_cart_id_request (optional)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['putItem'] to see the possible values for this operation
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $item_sku Item SKU. (required)
+     * @param PutItemByCartIdRequest|null $put_item_by_cart_id_request (optional)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['putItem'] to see the possible values for this operation
      *
-     * @throws \InvalidArgumentException
-     * @return \GuzzleHttp\Psr7\Request
+     * @throws InvalidArgumentException
+     * @return Request
      */
     public function putItemRequest($project_id, $item_sku, $put_item_by_cart_id_request = null, string $contentType = self::contentTypes['putItem'][0])
     {
 
         // verify the required parameter 'project_id' is set
         if ($project_id === null || (is_array($project_id) && count($project_id) === 0)) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 'Missing the required parameter $project_id when calling putItem'
             );
         }
 
         // verify the required parameter 'item_sku' is set
         if ($item_sku === null || (is_array($item_sku) && count($item_sku) === 0)) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 'Missing the required parameter $item_sku when calling putItem'
             );
         }
-
 
 
         $resourcePath = '/v2/project/{project_id}/cart/item/{item_sku}';
@@ -2536,7 +2515,6 @@ class CartClientSideApi
         $headerParams = [];
         $httpBody = '';
         $multipart = false;
-
 
 
         // path params
@@ -2558,7 +2536,7 @@ class CartClientSideApi
 
 
         $headers = $this->headerSelector->selectHeaders(
-            ['application/json', ],
+            ['application/json',],
             $contentType,
             $multipart
         );
@@ -2567,7 +2545,7 @@ class CartClientSideApi
         if (isset($put_item_by_cart_id_request)) {
             if (stripos($headers['Content-Type'], 'application/json') !== false) {
                 # if Content-Type contains "application/json", json_encode the body
-                $httpBody = \GuzzleHttp\Utils::jsonEncode(ObjectSerializer::sanitizeForSerialization($put_item_by_cart_id_request));
+                $httpBody = Utils::jsonEncode(ObjectSerializer::sanitizeForSerialization($put_item_by_cart_id_request));
             } else {
                 $httpBody = $put_item_by_cart_id_request;
             }
@@ -2588,7 +2566,7 @@ class CartClientSideApi
 
             } elseif (stripos($headers['Content-Type'], 'application/json') !== false) {
                 # if Content-Type contains "application/json", json_encode the form parameters
-                $httpBody = \GuzzleHttp\Utils::jsonEncode($formParams);
+                $httpBody = Utils::jsonEncode($formParams);
             } else {
                 // for HTTP post (form)
                 $httpBody = ObjectSerializer::buildQuery($formParams);
@@ -2622,18 +2600,82 @@ class CartClientSideApi
     }
 
     /**
+     * Operation putItemAsync
+     *
+     * Update cart item from current cart
+     *
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $item_sku Item SKU. (required)
+     * @param PutItemByCartIdRequest|null $put_item_by_cart_id_request (optional)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['putItem'] to see the possible values for this operation
+     *
+     * @throws InvalidArgumentException
+     * @return PromiseInterface
+     */
+    public function putItemAsync($project_id, $item_sku, $put_item_by_cart_id_request = null, string $contentType = self::contentTypes['putItem'][0])
+    {
+        return $this->putItemAsyncWithHttpInfo($project_id, $item_sku, $put_item_by_cart_id_request, $contentType)
+            ->then(
+                function ($response) {
+                    return $response[0];
+                }
+            );
+    }
+
+    /**
+     * Operation putItemAsyncWithHttpInfo
+     *
+     * Update cart item from current cart
+     *
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $item_sku Item SKU. (required)
+     * @param PutItemByCartIdRequest|null $put_item_by_cart_id_request (optional)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['putItem'] to see the possible values for this operation
+     *
+     * @throws InvalidArgumentException
+     * @return PromiseInterface
+     */
+    public function putItemAsyncWithHttpInfo($project_id, $item_sku, $put_item_by_cart_id_request = null, string $contentType = self::contentTypes['putItem'][0])
+    {
+        $returnType = '';
+        $request = $this->putItemRequest($project_id, $item_sku, $put_item_by_cart_id_request, $contentType);
+
+        return $this->client
+            ->sendAsync($request, $this->createHttpClientOption())
+            ->then(
+                function ($response) use ($returnType) {
+                    return [null, $response->getStatusCode(), $response->getHeaders()];
+                },
+                function ($exception) {
+                    $response = $exception->getResponse();
+                    $statusCode = $response->getStatusCode();
+                    throw new ApiException(
+                        sprintf(
+                            '[%d] Error connecting to the API (%s)',
+                            $statusCode,
+                            $exception->getRequest()->getUri()
+                        ),
+                        $statusCode,
+                        $response->getHeaders(),
+                        (string)$response->getBody()
+                    );
+                }
+            );
+    }
+
+    /**
      * Operation putItemByCartId
      *
      * Update cart item by cart ID
      *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $cart_id Cart ID. (required)
-     * @param  string $item_sku Item SKU. (required)
-     * @param  \OpenAPI\Client\Model\PutItemByCartIdRequest|null $put_item_by_cart_id_request put_item_by_cart_id_request (optional)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['putItemByCartId'] to see the possible values for this operation
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $cart_id Cart ID. (required)
+     * @param string $item_sku Item SKU. (required)
+     * @param PutItemByCartIdRequest|null $put_item_by_cart_id_request put_item_by_cart_id_request (optional)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['putItemByCartId'] to see the possible values for this operation
      *
-     * @throws \OpenAPI\Client\ApiException on non-2xx response or if the response body is not in the expected format
-     * @throws \InvalidArgumentException
+     * @throws ApiException on non-2xx response or if the response body is not in the expected format
+     * @throws InvalidArgumentException
      * @return void
      */
     public function putItemByCartId($project_id, $cart_id, $item_sku, $put_item_by_cart_id_request = null, string $contentType = self::contentTypes['putItemByCartId'][0])
@@ -2646,14 +2688,14 @@ class CartClientSideApi
      *
      * Update cart item by cart ID
      *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $cart_id Cart ID. (required)
-     * @param  string $item_sku Item SKU. (required)
-     * @param  \OpenAPI\Client\Model\PutItemByCartIdRequest|null $put_item_by_cart_id_request (optional)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['putItemByCartId'] to see the possible values for this operation
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $cart_id Cart ID. (required)
+     * @param string $item_sku Item SKU. (required)
+     * @param PutItemByCartIdRequest|null $put_item_by_cart_id_request (optional)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['putItemByCartId'] to see the possible values for this operation
      *
-     * @throws \OpenAPI\Client\ApiException on non-2xx response or if the response body is not in the expected format
-     * @throws \InvalidArgumentException
+     * @throws ApiException on non-2xx response or if the response body is not in the expected format
+     * @throws InvalidArgumentException
      * @return array of null, HTTP status code, HTTP response headers (array of strings)
      */
     public function putItemByCartIdWithHttpInfo($project_id, $cart_id, $item_sku, $put_item_by_cart_id_request = null, string $contentType = self::contentTypes['putItemByCartId'][0])
@@ -2667,14 +2709,14 @@ class CartClientSideApi
             } catch (RequestException $e) {
                 throw new ApiException(
                     "[{$e->getCode()}] {$e->getMessage()}",
-                    (int) $e->getCode(),
+                    (int)$e->getCode(),
                     $e->getResponse() ? $e->getResponse()->getHeaders() : null,
-                    $e->getResponse() ? (string) $e->getResponse()->getBody() : null
+                    $e->getResponse() ? (string)$e->getResponse()->getBody() : null
                 );
             } catch (ConnectException $e) {
                 throw new ApiException(
                     "[{$e->getCode()}] {$e->getMessage()}",
-                    (int) $e->getCode(),
+                    (int)$e->getCode(),
                     null,
                     null
                 );
@@ -2703,114 +2745,47 @@ class CartClientSideApi
                     $e->setResponseObject($data);
                     throw $e;
             }
-        
+
 
             throw $e;
         }
     }
 
     /**
-     * Operation putItemByCartIdAsync
-     *
-     * Update cart item by cart ID
-     *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $cart_id Cart ID. (required)
-     * @param  string $item_sku Item SKU. (required)
-     * @param  \OpenAPI\Client\Model\PutItemByCartIdRequest|null $put_item_by_cart_id_request (optional)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['putItemByCartId'] to see the possible values for this operation
-     *
-     * @throws \InvalidArgumentException
-     * @return \GuzzleHttp\Promise\PromiseInterface
-     */
-    public function putItemByCartIdAsync($project_id, $cart_id, $item_sku, $put_item_by_cart_id_request = null, string $contentType = self::contentTypes['putItemByCartId'][0])
-    {
-        return $this->putItemByCartIdAsyncWithHttpInfo($project_id, $cart_id, $item_sku, $put_item_by_cart_id_request, $contentType)
-            ->then(
-                function ($response) {
-                    return $response[0];
-                }
-            );
-    }
-
-    /**
-     * Operation putItemByCartIdAsyncWithHttpInfo
-     *
-     * Update cart item by cart ID
-     *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $cart_id Cart ID. (required)
-     * @param  string $item_sku Item SKU. (required)
-     * @param  \OpenAPI\Client\Model\PutItemByCartIdRequest|null $put_item_by_cart_id_request (optional)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['putItemByCartId'] to see the possible values for this operation
-     *
-     * @throws \InvalidArgumentException
-     * @return \GuzzleHttp\Promise\PromiseInterface
-     */
-    public function putItemByCartIdAsyncWithHttpInfo($project_id, $cart_id, $item_sku, $put_item_by_cart_id_request = null, string $contentType = self::contentTypes['putItemByCartId'][0])
-    {
-        $returnType = '';
-        $request = $this->putItemByCartIdRequest($project_id, $cart_id, $item_sku, $put_item_by_cart_id_request, $contentType);
-
-        return $this->client
-            ->sendAsync($request, $this->createHttpClientOption())
-            ->then(
-                function ($response) use ($returnType) {
-                    return [null, $response->getStatusCode(), $response->getHeaders()];
-                },
-                function ($exception) {
-                    $response = $exception->getResponse();
-                    $statusCode = $response->getStatusCode();
-                    throw new ApiException(
-                        sprintf(
-                            '[%d] Error connecting to the API (%s)',
-                            $statusCode,
-                            $exception->getRequest()->getUri()
-                        ),
-                        $statusCode,
-                        $response->getHeaders(),
-                        (string) $response->getBody()
-                    );
-                }
-            );
-    }
-
-    /**
      * Create request for operation 'putItemByCartId'
      *
-     * @param  int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
-     * @param  string $cart_id Cart ID. (required)
-     * @param  string $item_sku Item SKU. (required)
-     * @param  \OpenAPI\Client\Model\PutItemByCartIdRequest|null $put_item_by_cart_id_request (optional)
-     * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['putItemByCartId'] to see the possible values for this operation
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $cart_id Cart ID. (required)
+     * @param string $item_sku Item SKU. (required)
+     * @param PutItemByCartIdRequest|null $put_item_by_cart_id_request (optional)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['putItemByCartId'] to see the possible values for this operation
      *
-     * @throws \InvalidArgumentException
-     * @return \GuzzleHttp\Psr7\Request
+     * @throws InvalidArgumentException
+     * @return Request
      */
     public function putItemByCartIdRequest($project_id, $cart_id, $item_sku, $put_item_by_cart_id_request = null, string $contentType = self::contentTypes['putItemByCartId'][0])
     {
 
         // verify the required parameter 'project_id' is set
         if ($project_id === null || (is_array($project_id) && count($project_id) === 0)) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 'Missing the required parameter $project_id when calling putItemByCartId'
             );
         }
 
         // verify the required parameter 'cart_id' is set
         if ($cart_id === null || (is_array($cart_id) && count($cart_id) === 0)) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 'Missing the required parameter $cart_id when calling putItemByCartId'
             );
         }
 
         // verify the required parameter 'item_sku' is set
         if ($item_sku === null || (is_array($item_sku) && count($item_sku) === 0)) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 'Missing the required parameter $item_sku when calling putItemByCartId'
             );
         }
-
 
 
         $resourcePath = '/v2/project/{project_id}/cart/{cart_id}/item/{item_sku}';
@@ -2819,7 +2794,6 @@ class CartClientSideApi
         $headerParams = [];
         $httpBody = '';
         $multipart = false;
-
 
 
         // path params
@@ -2849,7 +2823,7 @@ class CartClientSideApi
 
 
         $headers = $this->headerSelector->selectHeaders(
-            ['application/json', ],
+            ['application/json',],
             $contentType,
             $multipart
         );
@@ -2858,7 +2832,7 @@ class CartClientSideApi
         if (isset($put_item_by_cart_id_request)) {
             if (stripos($headers['Content-Type'], 'application/json') !== false) {
                 # if Content-Type contains "application/json", json_encode the body
-                $httpBody = \GuzzleHttp\Utils::jsonEncode(ObjectSerializer::sanitizeForSerialization($put_item_by_cart_id_request));
+                $httpBody = Utils::jsonEncode(ObjectSerializer::sanitizeForSerialization($put_item_by_cart_id_request));
             } else {
                 $httpBody = $put_item_by_cart_id_request;
             }
@@ -2879,7 +2853,7 @@ class CartClientSideApi
 
             } elseif (stripos($headers['Content-Type'], 'application/json') !== false) {
                 # if Content-Type contains "application/json", json_encode the form parameters
-                $httpBody = \GuzzleHttp\Utils::jsonEncode($formParams);
+                $httpBody = Utils::jsonEncode($formParams);
             } else {
                 // for HTTP post (form)
                 $httpBody = ObjectSerializer::buildQuery($formParams);
@@ -2913,63 +2887,78 @@ class CartClientSideApi
     }
 
     /**
-     * Create http client option
+     * Operation putItemByCartIdAsync
      *
-     * @throws \RuntimeException on file opening failure
-     * @return array of http client options
+     * Update cart item by cart ID
+     *
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $cart_id Cart ID. (required)
+     * @param string $item_sku Item SKU. (required)
+     * @param PutItemByCartIdRequest|null $put_item_by_cart_id_request (optional)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['putItemByCartId'] to see the possible values for this operation
+     *
+     * @throws InvalidArgumentException
+     * @return PromiseInterface
      */
-    protected function createHttpClientOption()
+    public function putItemByCartIdAsync($project_id, $cart_id, $item_sku, $put_item_by_cart_id_request = null, string $contentType = self::contentTypes['putItemByCartId'][0])
     {
-        $options = [];
-        if ($this->config->getDebug()) {
-            $options[RequestOptions::DEBUG] = fopen($this->config->getDebugFile(), 'a');
-            if (!$options[RequestOptions::DEBUG]) {
-                throw new \RuntimeException('Failed to open the debug file: ' . $this->config->getDebugFile());
-            }
-        }
-
-        return $options;
+        return $this->putItemByCartIdAsyncWithHttpInfo($project_id, $cart_id, $item_sku, $put_item_by_cart_id_request, $contentType)
+            ->then(
+                function ($response) {
+                    return $response[0];
+                }
+            );
     }
 
-    private function handleResponseWithDataType(
-        string $dataType,
-        RequestInterface $request,
-        ResponseInterface $response
-    ): array {
-        if ($dataType === '\SplFileObject') {
-            $content = $response->getBody(); //stream goes to serializer
-        } else {
-            $content = (string) $response->getBody();
-            if ($dataType !== 'string') {
-                try {
-                    $content = json_decode($content, false, 512, JSON_THROW_ON_ERROR);
-                } catch (\JsonException $exception) {
+    /**
+     * Operation putItemByCartIdAsyncWithHttpInfo
+     *
+     * Update cart item by cart ID
+     *
+     * @param int $project_id Project ID. You can find this parameter in your [Publisher Account](https://publisher.xsolla.com/) next to the name of the project. (required)
+     * @param string $cart_id Cart ID. (required)
+     * @param string $item_sku Item SKU. (required)
+     * @param PutItemByCartIdRequest|null $put_item_by_cart_id_request (optional)
+     * @param string $contentType The value for the Content-Type header. Check self::contentTypes['putItemByCartId'] to see the possible values for this operation
+     *
+     * @throws InvalidArgumentException
+     * @return PromiseInterface
+     */
+    public function putItemByCartIdAsyncWithHttpInfo($project_id, $cart_id, $item_sku, $put_item_by_cart_id_request = null, string $contentType = self::contentTypes['putItemByCartId'][0])
+    {
+        $returnType = '';
+        $request = $this->putItemByCartIdRequest($project_id, $cart_id, $item_sku, $put_item_by_cart_id_request, $contentType);
+
+        return $this->client
+            ->sendAsync($request, $this->createHttpClientOption())
+            ->then(
+                function ($response) use ($returnType) {
+                    return [null, $response->getStatusCode(), $response->getHeaders()];
+                },
+                function ($exception) {
+                    $response = $exception->getResponse();
+                    $statusCode = $response->getStatusCode();
                     throw new ApiException(
                         sprintf(
-                            'Error JSON decoding server response (%s)',
-                            $request->getUri()
+                            '[%d] Error connecting to the API (%s)',
+                            $statusCode,
+                            $exception->getRequest()->getUri()
                         ),
-                        $response->getStatusCode(),
+                        $statusCode,
                         $response->getHeaders(),
-                        $content
+                        (string)$response->getBody()
                     );
                 }
-            }
-        }
-
-        return [
-            ObjectSerializer::deserialize($content, $dataType, []),
-            $response->getStatusCode(),
-            $response->getHeaders()
-        ];
+            );
     }
 
     private function responseWithinRangeCode(
         string $rangeCode,
-        int $statusCode
-    ): bool {
-        $left = (int) ($rangeCode[0].'00');
-        $right = (int) ($rangeCode[0].'99');
+        int    $statusCode
+    ): bool
+    {
+        $left = (int)($rangeCode[0] . '00');
+        $right = (int)($rangeCode[0] . '99');
 
         return $statusCode >= $left && $statusCode <= $right;
     }

@@ -50,7 +50,7 @@ return static function (): ContainerInterface {
 
     $clientConfig = (new Configuration())
         ->setUsername($_ENV['STOREFRONT_PROJECT_ID'])
-        ->setPassword($_ENV['STOREFRONT_CLIENT_TOKEN']);
+        ->setAccessToken($_ENV['STOREFRONT_CLIENT_TOKEN']);
 
     $containerBuilder->addDefinitions([
         CurrencyRepositoryInterface::class => static fn(ContainerInterface $container) => currencyRepositoryFactory(

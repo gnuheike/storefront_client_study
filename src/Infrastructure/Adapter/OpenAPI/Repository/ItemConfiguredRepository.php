@@ -42,7 +42,7 @@ readonly class ItemConfiguredRepository implements ItemRepositoryInterface
         try {
             $response = $this->apiInstance->adminGetVirtualItemsList($this->projectID);
         } catch (ApiException $e) {
-            throw new StorefrontApiException('Failed to get items', $e);
+            throw new StorefrontApiException('Failed to get items', $e->getResponseObject());
         }
 
         return array_map(
@@ -60,7 +60,7 @@ readonly class ItemConfiguredRepository implements ItemRepositoryInterface
                 return null;
             }
 
-            throw new StorefrontApiException('Item not found', $e);
+            throw new StorefrontApiException('Item not found', $e->getResponseObject());
         }
 
         if ($response instanceof InlineObject64) {
@@ -79,7 +79,7 @@ readonly class ItemConfiguredRepository implements ItemRepositoryInterface
         try {
             $response = $this->apiInstance->adminCreateVirtualItem($this->projectID, $model);
         } catch (ApiException $e) {
-            throw new StorefrontApiException('Failed to save item', $e);
+            throw new StorefrontApiException('Failed to save item', $e->getResponseObject());
         }
 
         if ($response instanceof InlineObject64) {

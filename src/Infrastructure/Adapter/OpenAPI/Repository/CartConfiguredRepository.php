@@ -42,7 +42,7 @@ readonly class CartConfiguredRepository implements CartRepositoryInterface
         try {
             $response = $this->apiInstance->getUserCart($this->projectID);
         } catch (ApiException $e) {
-            throw new StorefrontApiException('Failed to get carts', $e);
+            throw new StorefrontApiException('Failed to get carts', json_decode($e->getResponseBody()));
         }
 
         // The API returns a single cart, but our domain model expects a collection
@@ -63,7 +63,7 @@ readonly class CartConfiguredRepository implements CartRepositoryInterface
             if ($e->getCode() === 404) {
                 return null;
             }
-            throw new StorefrontApiException('Failed to get cart', $e);
+            throw new StorefrontApiException('Failed to get cart', $e->getResponseObject());
         }
 
         return $this->cartMapper->toDomain($response);
@@ -98,10 +98,10 @@ readonly class CartConfiguredRepository implements CartRepositoryInterface
             $resuest = new CartFillRequest([
                 'items' => $items
             ]);
-            
+
             $response = $this->apiInstance->cartFillById($this->projectID, $cartId, $resuest);
         } catch (ApiException $e) {
-            throw new StorefrontApiException('Failed to add item to cart', $e);
+            throw new StorefrontApiException('Failed to add item to cart', $e->getResponseObject());
         }
 
         return $this->cartMapper->toDomain($response);

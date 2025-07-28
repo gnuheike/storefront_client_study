@@ -42,7 +42,7 @@ readonly class CurrencyConfiguredRepository implements CurrencyRepositoryInterfa
         try {
             $response = $this->apiInstance->adminGetVirtualCurrenciesList($this->projectID);
         } catch (ApiException $e) {
-            throw new StorefrontApiException('Failed to get currencies', $e);
+            throw new StorefrontApiException('Failed to get currencies', $e->getResponseObject());
         }
 
         return array_map(
@@ -77,7 +77,7 @@ readonly class CurrencyConfiguredRepository implements CurrencyRepositoryInterfa
         try {
             $response = $this->apiInstance->adminCreateVirtualCurrency($this->projectID, $model);
         } catch (ApiException $e) {
-            throw new StorefrontApiException('Failed to save currency', $e);
+            throw new StorefrontApiException('Failed to save currency', $e->getResponseObject());
         }
 
         if ($response instanceof InlineObject64) {
