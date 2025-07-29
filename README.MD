@@ -62,6 +62,3 @@ To run the application:
 ```bash
 php index.php
 ```
-
-- Console Runners: `AdminBehaviorConsoleRunner`, `ClientBehaviorConsoleRunner`
-- Providers: `AdminCurrencyProvider`, `AdminItemProvider`
