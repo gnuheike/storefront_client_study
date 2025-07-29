@@ -50,7 +50,7 @@ The application communicates with a backend service using an OpenAPI client.
    STOREFRONT_CLIENT_TOKEN=your_client_token
    ```
 
-4. Generate the OpenAPI client (if needed):
+4. Regenerate the OpenAPI client (as needed):
    ```bash
    ./generate-client.sh
    ```
