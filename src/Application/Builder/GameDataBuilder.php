@@ -6,7 +6,7 @@ namespace StoreFrontClient\Application\Builder;
 
 /**
  * Builder for game test data.
- * 
+ *
  * This class provides methods to build test data for games.
  */
 class GameDataBuilder
@@ -15,7 +15,7 @@ class GameDataBuilder
      * @var array The game data
      */
     private array $data;
-    
+
     /**
      * Constructor.
      */
@@ -23,7 +23,7 @@ class GameDataBuilder
     {
         $this->reset();
     }
-    
+
     /**
      * Reset the builder to its initial state.
      *
@@ -65,10 +65,20 @@ class GameDataBuilder
             'is_dlc' => false,
             'base_game' => null
         ];
-        
+
         return $this;
     }
-    
+
+    /**
+     * Create a new instance of the builder.
+     *
+     * @return self
+     */
+    public static function create(): self
+    {
+        return new self();
+    }
+
     /**
      * Set the SKU.
      *
@@ -80,7 +90,7 @@ class GameDataBuilder
         $this->data['sku'] = $sku;
         return $this;
     }
-    
+
     /**
      * Set the name.
      *
@@ -92,7 +102,7 @@ class GameDataBuilder
         $this->data['name'] = $name;
         return $this;
     }
-    
+
     /**
      * Set whether the game is enabled.
      *
@@ -104,7 +114,7 @@ class GameDataBuilder
         $this->data['enabled'] = $enabled;
         return $this;
     }
-    
+
     /**
      * Set the order.
      *
@@ -116,7 +126,7 @@ class GameDataBuilder
         $this->data['order'] = $order;
         return $this;
     }
-    
+
     /**
      * Set the description.
      *
@@ -128,7 +138,7 @@ class GameDataBuilder
         $this->data['description'] = $description;
         return $this;
     }
-    
+
     /**
      * Set the groups.
      *
@@ -140,7 +150,7 @@ class GameDataBuilder
         $this->data['groups'] = $groups;
         return $this;
     }
-    
+
     /**
      * Set the attributes.
      *
@@ -152,7 +162,7 @@ class GameDataBuilder
         $this->data['attributes'] = $attributes;
         return $this;
     }
-    
+
     /**
      * Set the image URL.
      *
@@ -164,7 +174,7 @@ class GameDataBuilder
         $this->data['image_url'] = $imageUrl;
         return $this;
     }
-    
+
     /**
      * Set the release date.
      *
@@ -176,7 +186,7 @@ class GameDataBuilder
         $this->data['release_date'] = $releaseDate;
         return $this;
     }
-    
+
     /**
      * Set the publisher.
      *
@@ -188,7 +198,7 @@ class GameDataBuilder
         $this->data['publisher'] = $publisher;
         return $this;
     }
-    
+
     /**
      * Set the developer.
      *
@@ -200,7 +210,7 @@ class GameDataBuilder
         $this->data['developer'] = $developer;
         return $this;
     }
-    
+
     /**
      * Set the genres.
      *
@@ -212,7 +222,7 @@ class GameDataBuilder
         $this->data['genres'] = $genres;
         return $this;
     }
-    
+
     /**
      * Set the platforms.
      *
@@ -224,7 +234,7 @@ class GameDataBuilder
         $this->data['platforms'] = $platforms;
         return $this;
     }
-    
+
     /**
      * Set the system requirements.
      *
@@ -236,7 +246,7 @@ class GameDataBuilder
         $this->data['system_requirements'] = $systemRequirements;
         return $this;
     }
-    
+
     /**
      * Set the minimum system requirements.
      *
@@ -248,7 +258,7 @@ class GameDataBuilder
         $this->data['system_requirements']['minimum'] = $minimumRequirements;
         return $this;
     }
-    
+
     /**
      * Set the recommended system requirements.
      *
@@ -260,7 +270,7 @@ class GameDataBuilder
         $this->data['system_requirements']['recommended'] = $recommendedRequirements;
         return $this;
     }
-    
+
     /**
      * Set the DLC.
      *
@@ -272,7 +282,7 @@ class GameDataBuilder
         $this->data['dlc'] = $dlc;
         return $this;
     }
-    
+
     /**
      * Set whether the game is DLC.
      *
@@ -284,7 +294,7 @@ class GameDataBuilder
         $this->data['is_dlc'] = $isDlc;
         return $this;
     }
-    
+
     /**
      * Set the base game.
      *
@@ -296,7 +306,7 @@ class GameDataBuilder
         $this->data['base_game'] = $baseGame;
         return $this;
     }
-    
+
     /**
      * Build the game data.
      *
@@ -305,15 +315,5 @@ class GameDataBuilder
     public function build(): array
     {
         return $this->data;
-    }
-    
-    /**
-     * Create a new instance of the builder.
-     *
-     * @return self
-     */
-    public static function create(): self
-    {
-        return new self();
     }
 }

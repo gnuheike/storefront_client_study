@@ -6,7 +6,7 @@ namespace StoreFrontClient\Application\Builder;
 
 /**
  * Builder for item test data.
- * 
+ *
  * This class provides methods to build test data for items.
  */
 class ItemDataBuilder
@@ -15,7 +15,7 @@ class ItemDataBuilder
      * @var array The item data
      */
     private array $data;
-    
+
     /**
      * Constructor.
      */
@@ -23,7 +23,7 @@ class ItemDataBuilder
     {
         $this->reset();
     }
-    
+
     /**
      * Reset the builder to its initial state.
      *
@@ -52,10 +52,20 @@ class ItemDataBuilder
                 'items' => []
             ]
         ];
-        
+
         return $this;
     }
-    
+
+    /**
+     * Create a new instance of the builder.
+     *
+     * @return self
+     */
+    public static function create(): self
+    {
+        return new self();
+    }
+
     /**
      * Set the SKU.
      *
@@ -67,7 +77,7 @@ class ItemDataBuilder
         $this->data['sku'] = $sku;
         return $this;
     }
-    
+
     /**
      * Set the name.
      *
@@ -79,7 +89,7 @@ class ItemDataBuilder
         $this->data['name'] = $name;
         return $this;
     }
-    
+
     /**
      * Set whether the item is enabled.
      *
@@ -91,7 +101,7 @@ class ItemDataBuilder
         $this->data['enabled'] = $enabled;
         return $this;
     }
-    
+
     /**
      * Set whether the item is virtual.
      *
@@ -103,7 +113,7 @@ class ItemDataBuilder
         $this->data['virtual'] = $virtual;
         return $this;
     }
-    
+
     /**
      * Set the order.
      *
@@ -115,7 +125,7 @@ class ItemDataBuilder
         $this->data['order'] = $order;
         return $this;
     }
-    
+
     /**
      * Set the description.
      *
@@ -127,7 +137,7 @@ class ItemDataBuilder
         $this->data['description'] = $description;
         return $this;
     }
-    
+
     /**
      * Set the groups.
      *
@@ -139,7 +149,7 @@ class ItemDataBuilder
         $this->data['groups'] = $groups;
         return $this;
     }
-    
+
     /**
      * Set the attributes.
      *
@@ -151,7 +161,7 @@ class ItemDataBuilder
         $this->data['attributes'] = $attributes;
         return $this;
     }
-    
+
     /**
      * Set the price.
      *
@@ -163,7 +173,7 @@ class ItemDataBuilder
         $this->data['price'] = $price;
         return $this;
     }
-    
+
     /**
      * Set the image URL.
      *
@@ -175,7 +185,7 @@ class ItemDataBuilder
         $this->data['image_url'] = $imageUrl;
         return $this;
     }
-    
+
     /**
      * Set whether the item is free.
      *
@@ -187,7 +197,7 @@ class ItemDataBuilder
         $this->data['is_free'] = $isFree;
         return $this;
     }
-    
+
     /**
      * Set the inventory.
      *
@@ -199,7 +209,7 @@ class ItemDataBuilder
         $this->data['inventory'] = $inventory;
         return $this;
     }
-    
+
     /**
      * Set the inventory quantity.
      *
@@ -211,7 +221,7 @@ class ItemDataBuilder
         $this->data['inventory']['quantity'] = $quantity;
         return $this;
     }
-    
+
     /**
      * Set whether the inventory is unlimited.
      *
@@ -223,7 +233,7 @@ class ItemDataBuilder
         $this->data['inventory']['unlimited'] = $unlimited;
         return $this;
     }
-    
+
     /**
      * Set whether the item is a bundle.
      *
@@ -235,7 +245,7 @@ class ItemDataBuilder
         $this->data['bundle']['is_bundle'] = $isBundle;
         return $this;
     }
-    
+
     /**
      * Set the bundle items.
      *
@@ -247,7 +257,7 @@ class ItemDataBuilder
         $this->data['bundle']['items'] = $items;
         return $this;
     }
-    
+
     /**
      * Build the item data.
      *
@@ -256,15 +266,5 @@ class ItemDataBuilder
     public function build(): array
     {
         return $this->data;
-    }
-    
-    /**
-     * Create a new instance of the builder.
-     *
-     * @return self
-     */
-    public static function create(): self
-    {
-        return new self();
     }
 }

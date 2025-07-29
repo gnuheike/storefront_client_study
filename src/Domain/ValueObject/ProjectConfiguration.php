@@ -14,6 +14,7 @@ final readonly class ProjectConfiguration
     public function __construct(
         public string $projectId,
         public string $serverUrl
-    ) {
+    )
+    {
     }
 }

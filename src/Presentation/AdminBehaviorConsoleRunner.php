@@ -11,19 +11,15 @@ use StoreFrontClient\Application\Service\Admin\AdminApplicationService;
 use StoreFrontClient\Application\Service\Admin\AdminCurrencyProviderInterface;
 use StoreFrontClient\Application\Service\Admin\AdminItemProviderInterface;
 use StoreFrontClient\Domain\Exception\BusinessRuleException;
+use StoreFrontClient\Presentation\Provider\AdminCodeProvider;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Helper\QuestionHelper;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
+use Throwable;
 
 final readonly class AdminBehaviorConsoleRunner
 {
     public function __construct(
         private AdminApplicationService        $adminApplicationService,
         private LoggerInterface                $logger,
-        private InputInterface                 $input,
-        private OutputInterface                $output,
-        private QuestionHelper                 $questionHelper,
         private AdminCurrencyProviderInterface $currencyProvider,
         private AdminItemProviderInterface     $itemProvider,
     )
@@ -51,31 +47,57 @@ final readonly class AdminBehaviorConsoleRunner
          **/
 
         $this->logger->info('Creating currencies...');
-        $this->output->writeln('Creating currencies...');
         try {
             $currencies = $this->adminApplicationService->createCurrencies($this->currencyProvider);
         } catch (Exception $e) {
             $this->logger->error($e->getMessage());
-            $this->output->writeln($e->getMessage());
             return Command::FAILURE;
         }
 
         $this->logger->info("Currencies created.");
-        $this->output->writeln('Currencies created.');
+        foreach ($currencies as $currency) {
+            $this->logger->info(sprintf(
+                    '- SKU: %s',
+                    $currency->getValue())
+            );
+        }
 
 
         $this->logger->info('Creating items...');
-        $this->output->writeln('Creating items...');
         try {
-            $items = $this->adminApplicationService->createItems($this->itemProvider);
+            $itemSkus = $this->adminApplicationService->createItems($this->itemProvider);
         } catch (BusinessRuleException $e) {
             $this->logger->error($e->getMessage());
-            $this->output->writeln($e->getMessage());
             return Command::FAILURE;
         }
 
         $this->logger->info('Items created.');
-        $this->output->writeln('Items created.');
+        foreach ($itemSkus as $itemSku) {
+            $this->logger->info(sprintf(
+                '- SKU: %s',
+                $itemSku->getValue()
+            ));
+        }
+
+        // Upload codes for an item
+        $this->logger->info('Uploading codes...');
+        try {
+            $itemSku = $itemSkus[0];
+            $this->logger->info("Using item SKU: $itemSku->value for code upload");
+
+            $filePath = realpath(APP_ROOT . '/codes.txt');
+
+            $codeProvider = new AdminCodeProvider($itemSku, $filePath);
+            $result = $this->adminApplicationService->uploadCodes($codeProvider);
+
+            if ($result) {
+                $this->logger->info('Codes uploaded successfully.');
+            } else {
+                $this->logger->warning('Codes upload completed but may have issues.');
+            }
+        } catch (Throwable $e) {
+            $this->logger->error($e->getMessage());
+        }
 
         return Command::SUCCESS;
     }

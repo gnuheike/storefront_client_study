@@ -18,7 +18,7 @@ interface OrderRepositoryInterface
      * @throws RepositoryException
      */
     public function createOrderFromCart(string $cartId, bool $sandbox = true): Order;
-    
+
     /**
      * Creates a payment token for the specified order
      *

@@ -13,9 +13,10 @@ final readonly class Cart
      */
     public function __construct(
         public string $id,
-        public array $items,
+        public array  $items,
         public string $currency = 'USD'
-    ) {
+    )
+    {
         foreach ($items as $item) {
             if (!$item instanceof CartItem) {
                 throw new InvalidArgumentException('All items must be instances of CartItem');

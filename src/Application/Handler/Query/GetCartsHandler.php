@@ -10,7 +10,8 @@ readonly class GetCartsHandler
 {
     public function __construct(
         private CartRepositoryInterface $cartRepository
-    ) {
+    )
+    {
     }
 
     public function __invoke(GetCartsQuery $query): Carts

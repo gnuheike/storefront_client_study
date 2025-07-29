@@ -14,6 +14,7 @@ final readonly class GetCartsQuery
     public function __construct(
         public string $locale = 'en',
         public string $currency = 'USD'
-    ) {
+    )
+    {
     }
 }

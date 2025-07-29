@@ -34,9 +34,6 @@ readonly class ItemConfiguredRepository implements ItemRepositoryInterface
         $this->projectID = $config->getUsername();
     }
 
-    /**
-     * @return Item[]
-     */
     public function findAll(?int $limit = null, ?int $offset = null): array
     {
         try {
@@ -70,9 +67,6 @@ readonly class ItemConfiguredRepository implements ItemRepositoryInterface
         throw new RepositoryException('Item not found: ' . $response->getErrorMessage());
     }
 
-    /**
-     * @throws RepositoryException
-     */
     public function save(Item $item): Sku
     {
         $model = $this->itemMapper->toAPI($item);

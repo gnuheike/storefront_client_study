@@ -13,7 +13,8 @@ final readonly class CreatePaymentTokenCommand
 {
     public function __construct(
         public string $orderId,
-        public bool $sandbox = true
-    ) {
+        public bool   $sandbox = true
+    )
+    {
     }
 }

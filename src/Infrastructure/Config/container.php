@@ -12,6 +12,7 @@ use StoreFrontClient\Application\Handler\Command\CreateItemHandler;
 use StoreFrontClient\Application\Handler\Command\CreateOrderHandler;
 use StoreFrontClient\Application\Handler\Command\CreatePaymentTokenHandler;
 use StoreFrontClient\Application\Handler\Command\FillCartWithItemsHandler;
+use StoreFrontClient\Application\Handler\Command\UploadCodesBySkuHandler;
 use StoreFrontClient\Application\Handler\Query\GetCartsHandler;
 use StoreFrontClient\Application\Handler\Query\GetCurrenciesHandler;
 use StoreFrontClient\Application\Handler\Query\GetItemsHandler;
@@ -22,6 +23,7 @@ use StoreFrontClient\Application\Service\Client\ClientCartApplicationService;
 use StoreFrontClient\Application\Service\Client\SimpleClientApplicationService;
 use StoreFrontClient\Application\Service\Client\SimpleClientCartApplicationService;
 use StoreFrontClient\Domain\Repository\CartRepositoryInterface;
+use StoreFrontClient\Domain\Repository\CodeRepositoryInterface;
 use StoreFrontClient\Domain\Repository\CurrencyRepositoryInterface;
 use StoreFrontClient\Domain\Repository\ItemRepositoryInterface;
 use StoreFrontClient\Domain\Repository\OrderRepositoryInterface;
@@ -30,6 +32,7 @@ use StoreFrontClient\Infrastructure\Adapter\OpenAPI\Mapper\CurrencyMapper;
 use StoreFrontClient\Infrastructure\Adapter\OpenAPI\Mapper\ItemMapper;
 use StoreFrontClient\Infrastructure\Adapter\OpenAPI\Mapper\SkuMapper;
 use StoreFrontClient\Infrastructure\Adapter\OpenAPI\Repository\CartConfiguredRepository;
+use StoreFrontClient\Infrastructure\Adapter\OpenAPI\Repository\CodeConfiguredRepository;
 use StoreFrontClient\Infrastructure\Adapter\OpenAPI\Repository\CurrencyConfiguredRepository;
 use StoreFrontClient\Infrastructure\Adapter\OpenAPI\Repository\ItemConfiguredRepository;
 use StoreFrontClient\Infrastructure\Adapter\OpenAPI\Repository\OrderConfiguredRepository;
@@ -73,9 +76,18 @@ return static function (): ContainerInterface {
             $container,
             $clientConfig
         ),
+        CodeRepositoryInterface::class => static fn(ContainerInterface $container) => codeRepositoryFactory(
+            $container,
+            $adminConfig
+        ),
         Client::class => function () {
             return new Client();
         },
+        SimpleAdminApplicationService::class => static fn(ContainerInterface $container) => new SimpleAdminApplicationService(
+            $container->get(CreateCurrencyHandler::class),
+            $container->get(CreateItemHandler::class),
+            $container->get(UploadCodesBySkuHandler::class)
+        ),
         AdminApplicationService::class => static fn(ContainerInterface $container) => $container->get(
             SimpleAdminApplicationService::class
         ),
@@ -112,15 +124,15 @@ return static function (): ContainerInterface {
         CreatePaymentTokenHandler::class => static fn(ContainerInterface $container) => new CreatePaymentTokenHandler(
             $container->get(OrderRepositoryInterface::class)
         ),
+        UploadCodesBySkuHandler::class => static fn(ContainerInterface $container) => new UploadCodesBySkuHandler(
+            $container->get(CodeRepositoryInterface::class)
+        ),
 
         // Presentation
         QuestionHelper::class => static fn() => new QuestionHelper(),
         AdminBehaviorConsoleRunner::class => static fn(ContainerInterface $container) => new AdminBehaviorConsoleRunner(
             $container->get(AdminApplicationService::class),
             $container->get(LoggerInterface::class),
-            $container->get(InputInterface::class),
-            $container->get(OutputInterface::class),
-            $container->get(QuestionHelper::class),
             $container->get(AdminCurrencyProvider::class),
             $container->get(AdminItemProvider::class),
         ),
@@ -191,12 +203,23 @@ function orderRepositoryFactory(
     $adminConfig = (new Configuration())
         ->setUsername($_ENV['STOREFRONT_PROJECT_ID'])
         ->setPassword($_ENV['STOREFRONT_ADMIN_TOKEN']);
-        
+
     return new OrderConfiguredRepository(
         $clientConfig,
         $adminConfig,
         $container->get(Client::class),
         $container->get(CartRepositoryInterface::class),
         $container->get(CartMapper::class)
+    );
+}
+
+function codeRepositoryFactory(
+    ContainerInterface $container,
+    Configuration      $adminConfig
+): CodeRepositoryInterface
+{
+    return new CodeConfiguredRepository(
+        $adminConfig,
+        $container->get(Client::class)
     );
 }

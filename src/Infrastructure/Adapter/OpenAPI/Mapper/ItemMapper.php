@@ -51,7 +51,7 @@ readonly class ItemMapper
                 $currency = $firstPrice->getCurrency();
             }
         }
-     
+
         return new Item(
             new Sku($item->getSku()),
             LocalizedText::fromArray($nameArray),

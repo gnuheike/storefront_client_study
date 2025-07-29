@@ -6,7 +6,7 @@ namespace StoreFrontClient\Application\Builder;
 
 /**
  * Builder for currency test data.
- * 
+ *
  * This class provides methods to build test data for currencies.
  */
 class CurrencyDataBuilder
@@ -15,7 +15,7 @@ class CurrencyDataBuilder
      * @var array The currency data
      */
     private array $data;
-    
+
     /**
      * Constructor.
      */
@@ -23,7 +23,7 @@ class CurrencyDataBuilder
     {
         $this->reset();
     }
-    
+
     /**
      * Reset the builder to its initial state.
      *
@@ -44,10 +44,20 @@ class CurrencyDataBuilder
             'image_url' => null,
             'is_free' => true
         ];
-        
+
         return $this;
     }
-    
+
+    /**
+     * Create a new instance of the builder.
+     *
+     * @return self
+     */
+    public static function create(): self
+    {
+        return new self();
+    }
+
     /**
      * Set the SKU.
      *
@@ -59,7 +69,7 @@ class CurrencyDataBuilder
         $this->data['sku'] = $sku;
         return $this;
     }
-    
+
     /**
      * Set the name.
      *
@@ -71,7 +81,7 @@ class CurrencyDataBuilder
         $this->data['name'] = $name;
         return $this;
     }
-    
+
     /**
      * Set whether the currency is enabled.
      *
@@ -83,7 +93,7 @@ class CurrencyDataBuilder
         $this->data['enabled'] = $enabled;
         return $this;
     }
-    
+
     /**
      * Set whether the currency is virtual.
      *
@@ -95,7 +105,7 @@ class CurrencyDataBuilder
         $this->data['virtual'] = $virtual;
         return $this;
     }
-    
+
     /**
      * Set the order.
      *
@@ -107,7 +117,7 @@ class CurrencyDataBuilder
         $this->data['order'] = $order;
         return $this;
     }
-    
+
     /**
      * Set the description.
      *
@@ -119,7 +129,7 @@ class CurrencyDataBuilder
         $this->data['description'] = $description;
         return $this;
     }
-    
+
     /**
      * Set the groups.
      *
@@ -131,7 +141,7 @@ class CurrencyDataBuilder
         $this->data['groups'] = $groups;
         return $this;
     }
-    
+
     /**
      * Set the attributes.
      *
@@ -143,7 +153,7 @@ class CurrencyDataBuilder
         $this->data['attributes'] = $attributes;
         return $this;
     }
-    
+
     /**
      * Set the price.
      *
@@ -155,7 +165,7 @@ class CurrencyDataBuilder
         $this->data['price'] = $price;
         return $this;
     }
-    
+
     /**
      * Set the image URL.
      *
@@ -167,7 +177,7 @@ class CurrencyDataBuilder
         $this->data['image_url'] = $imageUrl;
         return $this;
     }
-    
+
     /**
      * Set whether the currency is free.
      *
@@ -179,7 +189,7 @@ class CurrencyDataBuilder
         $this->data['is_free'] = $isFree;
         return $this;
     }
-    
+
     /**
      * Build the currency data.
      *
@@ -188,15 +198,5 @@ class CurrencyDataBuilder
     public function build(): array
     {
         return $this->data;
-    }
-    
-    /**
-     * Create a new instance of the builder.
-     *
-     * @return self
-     */
-    public static function create(): self
-    {
-        return new self();
     }
 }

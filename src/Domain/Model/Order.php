@@ -13,11 +13,12 @@ final readonly class Order
      */
     public function __construct(
         public string $id,
-        public array $items,
+        public array  $items,
         public string $status,
         public string $currency = 'USD',
-        public bool $isSandbox = false
-    ) {
+        public bool   $isSandbox = false
+    )
+    {
         foreach ($items as $item) {
             if (!$item instanceof CartItem) {
                 throw new InvalidArgumentException('All items must be instances of CartItem');

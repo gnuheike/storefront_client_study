@@ -9,6 +9,7 @@ final readonly class GetItemBySkuQuery
     public function __construct(
         public string $sku,
         public string $locale = 'en'
-    ) {
+    )
+    {
     }
 }

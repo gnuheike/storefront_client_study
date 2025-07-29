@@ -13,7 +13,8 @@ final readonly class CreateOrderCommand
 {
     public function __construct(
         public string $cartId,
-        public bool $sandbox = true
-    ) {
+        public bool   $sandbox = true
+    )
+    {
     }
 }

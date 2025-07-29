@@ -16,12 +16,12 @@ interface ClientCartApplicationService
      * @param Sku[] $sku
      */
     public function fillCartWithItems(string $cartId, array $sku): Cart;
-    
+
     /**
      * Creates a sandbox order from the specified cart
      */
     public function createOrder(string $cartId, bool $sandbox = true): Order;
-    
+
     /**
      * Creates a payment token for the specified order
      */

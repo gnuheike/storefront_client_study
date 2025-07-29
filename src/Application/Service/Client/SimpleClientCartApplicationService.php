@@ -18,10 +18,10 @@ use StoreFrontClient\Domain\Model\PaymentToken;
 readonly class SimpleClientCartApplicationService implements ClientCartApplicationService
 {
     public function __construct(
-        private GetCartsHandler            $getCartsHandler,
-        private FillCartWithItemsHandler   $fillCartWithItemsHandler,
-        private CreateOrderHandler         $createOrderHandler,
-        private CreatePaymentTokenHandler  $createPaymentTokenHandler,
+        private GetCartsHandler           $getCartsHandler,
+        private FillCartWithItemsHandler  $fillCartWithItemsHandler,
+        private CreateOrderHandler        $createOrderHandler,
+        private CreatePaymentTokenHandler $createPaymentTokenHandler,
     )
     {
     }
@@ -35,12 +35,12 @@ readonly class SimpleClientCartApplicationService implements ClientCartApplicati
     {
         return $this->fillCartWithItemsHandler->__invoke(new FillCartWithItemsCommand($cartId, $sku));
     }
-    
+
     public function createOrder(string $cartId, bool $sandbox = true): Order
     {
         return $this->createOrderHandler->__invoke(new CreateOrderCommand($cartId, $sandbox));
     }
-    
+
     public function createPaymentToken(string $orderId, bool $sandbox = true): PaymentToken
     {
         return $this->createPaymentTokenHandler->__invoke(new CreatePaymentTokenCommand($orderId, $sandbox));

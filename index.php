@@ -24,7 +24,7 @@ $adminBehaviorConsoleRunner = $container->get(AdminBehaviorConsoleRunner::class)
 $clientBehaviorConsoleRunner = $container->get(ClientBehaviorConsoleRunner::class);
 
 try {
-    //$adminBehaviorConsoleRunner->run();
+    $adminBehaviorConsoleRunner->run();
     $clientBehaviorConsoleRunner->run();
 } catch (Throwable $e) {
     echo "Error: " . $e->getMessage() . PHP_EOL;

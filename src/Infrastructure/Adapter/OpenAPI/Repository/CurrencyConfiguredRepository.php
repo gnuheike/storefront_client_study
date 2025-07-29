@@ -34,9 +34,6 @@ readonly class CurrencyConfiguredRepository implements CurrencyRepositoryInterfa
         $this->projectID = $config->getUsername();
     }
 
-    /**
-     * @return Currency[]
-     */
     public function findAll(?int $limit = null, ?int $offset = null): array
     {
         try {

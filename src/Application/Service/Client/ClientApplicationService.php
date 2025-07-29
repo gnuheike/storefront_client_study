@@ -8,6 +8,6 @@ use StoreFrontClient\Domain\Model\Items;
 interface ClientApplicationService
 {
     public function listCurrencies(): Currencies;
-    
+
     public function listItems(): Items;
 }

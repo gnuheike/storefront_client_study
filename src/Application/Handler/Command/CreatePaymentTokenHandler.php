@@ -10,7 +10,8 @@ readonly class CreatePaymentTokenHandler
 {
     public function __construct(
         private OrderRepositoryInterface $orderRepository
-    ) {
+    )
+    {
     }
 
     public function __invoke(CreatePaymentTokenCommand $command): PaymentToken

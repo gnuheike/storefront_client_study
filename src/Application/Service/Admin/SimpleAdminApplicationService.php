@@ -7,16 +7,19 @@ namespace StoreFrontClient\Application\Service\Admin;
 use InvalidArgumentException;
 use StoreFrontClient\Application\Command\CreateCurrencyCommand;
 use StoreFrontClient\Application\Command\CreateItemCommand;
+use StoreFrontClient\Application\Command\UploadCodesBySkuCommand;
 use StoreFrontClient\Application\Handler\Command\CreateCurrencyHandler;
 use StoreFrontClient\Application\Handler\Command\CreateItemHandler;
+use StoreFrontClient\Application\Handler\Command\UploadCodesBySkuHandler;
 use StoreFrontClient\Domain\Model\Currency;
 use StoreFrontClient\Domain\Model\Item;
 
 final readonly class SimpleAdminApplicationService implements AdminApplicationService
 {
     public function __construct(
-        private CreateCurrencyHandler $createCurrencyHandler,
-        private CreateItemHandler     $createItemHandler,
+        private CreateCurrencyHandler   $createCurrencyHandler,
+        private CreateItemHandler       $createItemHandler,
+        private UploadCodesBySkuHandler $uploadCodesBySkuHandler,
     )
     {
     }
@@ -50,4 +53,13 @@ final readonly class SimpleAdminApplicationService implements AdminApplicationSe
             $items
         );
     }
+
+    public function uploadCodes(AdminCodeProviderInterface $codeProvider): bool
+    {
+        return $this->uploadCodesBySkuHandler->__invoke(new UploadCodesBySkuCommand(
+            $codeProvider->provideItemSku(),
+            $codeProvider->provideFilePath()
+        ));
+    }
+
 }

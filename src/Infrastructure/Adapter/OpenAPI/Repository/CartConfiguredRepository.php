@@ -10,11 +10,9 @@ use OpenAPI\Client\ApiException;
 use OpenAPI\Client\Configuration;
 use OpenAPI\Client\Model\CartFillRequest;
 use OpenAPI\Client\Model\CartFillRequestItemsInner;
-use StoreFrontClient\Domain\Exception\RepositoryException;
 use StoreFrontClient\Domain\Model\Cart;
 use StoreFrontClient\Domain\Model\Carts;
 use StoreFrontClient\Domain\Repository\CartRepositoryInterface;
-use StoreFrontClient\Domain\ValueObject\Sku;
 use StoreFrontClient\Infrastructure\Adapter\OpenAPI\Exception\StorefrontApiException;
 use StoreFrontClient\Infrastructure\Adapter\OpenAPI\Mapper\CartMapper;
 
@@ -33,10 +31,6 @@ readonly class CartConfiguredRepository implements CartRepositoryInterface
         $this->projectID = $config->getUsername();
     }
 
-    /**
-     * @return Carts
-     * @throws RepositoryException
-     */
     public function findAll(): Carts
     {
         try {
@@ -45,16 +39,10 @@ readonly class CartConfiguredRepository implements CartRepositoryInterface
             throw new StorefrontApiException('Failed to get carts', json_decode($e->getResponseBody()));
         }
 
-        // The API returns a single cart, but our domain model expects a collection
         $cart = $this->cartMapper->toDomain($response);
         return new Carts([$cart]);
     }
 
-    /**
-     * @param string $id
-     * @return Cart|null
-     * @throws RepositoryException
-     */
     public function findById(string $id): ?Cart
     {
         try {
@@ -69,10 +57,6 @@ readonly class CartConfiguredRepository implements CartRepositoryInterface
         return $this->cartMapper->toDomain($response);
     }
 
-    /**
-     * @param Sku[] $sku
-     * @throws RepositoryException
-     */
     public function fillCartWithItems(string $cartId, array $sku): Cart
     {
         $items = array_reduce(

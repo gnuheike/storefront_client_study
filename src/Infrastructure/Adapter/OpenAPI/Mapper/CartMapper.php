@@ -21,11 +21,11 @@ readonly class CartMapper
         if ($apiCart instanceof ApiInlineObject10) {
             return $this->inlineObject10ToDomain($apiCart);
         }
-        
+
         if ($apiCart instanceof ApiInlineObject11) {
             return $this->inlineObject11ToDomain($apiCart);
         }
-        
+
         if ($apiCart instanceof ApiCart) {
             $items = [];
             foreach ($apiCart->getItems() as $apiItem) {
@@ -33,15 +33,15 @@ readonly class CartMapper
             }
 
             return new Cart(
-                (string) $apiCart->getId(),
+                (string)$apiCart->getId(),
                 $items,
                 $apiCart->getCurrency()
             );
         }
-        
+
         throw new \InvalidArgumentException('Unsupported cart type: ' . get_class($apiCart));
     }
-    
+
     private function inlineObject10ToDomain(ApiInlineObject10 $apiCart): Cart
     {
         $items = [];
@@ -59,12 +59,30 @@ readonly class CartMapper
         }
 
         return new Cart(
-            (string) $apiCart->getCartId(),
+            (string)$apiCart->getCartId(),
             $items,
             $currency
         );
     }
-    
+
+    private function inlineObject10ItemToDomain(ApiInlineObject10Item $apiItem): CartItem
+    {
+        $price = new Money(
+            (int)($apiItem->getPrice() ? $apiItem->getPrice()->getAmount() : 0),
+            $apiItem->getPrice() ? $apiItem->getPrice()->getCurrency() : 'USD'
+        );
+
+        $isFree = $apiItem->getPrice() ? $apiItem->getPrice()->getAmount() == 0 : true;
+
+        return new CartItem(
+            new Sku($apiItem->getSku()),
+            (int)$apiItem->getQuantity(),
+            $price,
+            $apiItem->getName(),
+            $isFree
+        );
+    }
+
     private function inlineObject11ToDomain(ApiInlineObject11 $apiCart): Cart
     {
         $items = [];
@@ -82,34 +100,16 @@ readonly class CartMapper
         }
 
         return new Cart(
-            (string) $apiCart->getCartId(),
+            (string)$apiCart->getCartId(),
             $items,
             $currency
-        );
-    }
-    
-    private function inlineObject10ItemToDomain(ApiInlineObject10Item $apiItem): CartItem
-    {
-        $price = new Money(
-            (int) ($apiItem->getPrice() ? $apiItem->getPrice()->getAmount() : 0),
-            $apiItem->getPrice() ? $apiItem->getPrice()->getCurrency() : 'USD'
-        );
-
-        $isFree = $apiItem->getPrice() ? $apiItem->getPrice()->getAmount() == 0 : true;
-
-        return new CartItem(
-            new Sku($apiItem->getSku()),
-            (int) $apiItem->getQuantity(),
-            $price,
-            $apiItem->getName(),
-            $isFree
         );
     }
 
     private function itemToDomain(ApiCartItem $apiItem): CartItem
     {
         $price = new Money(
-            (int) $apiItem->getPrice(),
+            (int)$apiItem->getPrice(),
             $apiItem->getCurrency()
         );
 
@@ -117,7 +117,7 @@ readonly class CartMapper
 
         return new CartItem(
             new Sku($apiItem->getSku()),
-            (int) $apiItem->getQuantity(),
+            (int)$apiItem->getQuantity(),
             $price,
             $apiItem->getName(),
             $isFree
