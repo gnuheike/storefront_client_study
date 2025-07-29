@@ -10,12 +10,15 @@ The Storefront Client is a CLI tool that allows:
 - **Admin Operations**:
     - Creating and managing virtual currencies
     - Creating and managing virtual items
+    - Uploading game keys
 
 - **Client Operations**:
-    - Viewing available currencies
+    - Browsing available currencies
     - Browsing available items
     - Adding items to a cart
     - Viewing cart contents
+    - Making order
+    - Generating order token
 
 The application communicates with a backend service using an OpenAPI client.
 
@@ -30,7 +33,7 @@ The application communicates with a backend service using an OpenAPI client.
 
 1. Clone the repository:
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/gnuheike/storefront_client_study.git
    cd storefront_test
    ```
 
@@ -52,65 +55,13 @@ The application communicates with a backend service using an OpenAPI client.
    ./generate-client.sh
    ```
 
-## Usage
+## Running the Application
 
-### Running the Client Application
-
-To run the client application (browse items, add to cart):
+To run the application:
 
 ```bash
 php index.php
 ```
-
-### Running the Admin Application
-
-To run the admin application (create currencies and items), uncomment the admin runner in `index.php` and comment out
-the client runner:
-
-```php
-// Modify index.php
-$adminBehaviorConsoleRunner->run();
-// $clientBehaviorConsoleRunner->run();
-```
-
-Then run:
-
-```bash
-php index.php
-```
-
-## Project Architecture
-
-The project follows a clean architecture approach with four distinct layers:
-
-### 1. Domain Layer (`src/Domain/`)
-
-Contains core business logic, entities, value objects, and repository interfaces:
-
-- Models: `Item`, `Currency`, `Cart`
-- Value Objects: `Sku`
-- Repository Interfaces: `ItemRepositoryInterface`, `CurrencyRepositoryInterface`, `CartRepositoryInterface`
-
-### 2. Application Layer (`src/Application/`)
-
-Contains use cases, commands, and services that orchestrate domain objects:
-
-- Command Handlers: `CreateCurrencyHandler`, `CreateItemHandler`, `AddItemToCartHandler`
-- Query Handlers: `GetCurrenciesHandler`, `GetItemsHandler`, `GetCartsHandler`
-- Services: `AdminApplicationService`, `ClientApplicationService`
-
-### 3. Infrastructure Layer (`src/Infrastructure/`)
-
-Contains implementations of interfaces defined in the Domain layer:
-
-- Repository Implementations: `ItemConfiguredRepository`, `CurrencyConfiguredRepository`, `CartConfiguredRepository`
-- Adapters: OpenAPI client integration
-- Mappers: `ItemMapper`, `CurrencyMapper`, `CartMapper`
-- Configuration: Dependency injection setup
-
-### 4. Presentation Layer (`src/Presentation/`)
-
-Contains entry points to the application:
 
 - Console Runners: `AdminBehaviorConsoleRunner`, `ClientBehaviorConsoleRunner`
 - Providers: `AdminCurrencyProvider`, `AdminItemProvider`
